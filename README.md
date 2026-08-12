@@ -1,4 +1,4 @@
-# Proyecto IngSoft3 - versión A
+# Proyecto IngSoft3 - versión B
 TP1 - Git Colaborativo - Ingeniería de Software III 2026
 
 ## Instalación
