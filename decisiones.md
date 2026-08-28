@@ -90,18 +90,18 @@ Este TP contó con el soporte del agente de IA **Antigravity** (Google DeepMind)
   3. **Beneficio trivial**: "Para guardar los datos" no explica el valor de negocio real ni ayuda al Product Owner a priorizar el backlog.
 - **Reescritura correcta**: *"Como usuario registrado quiero poder guardar mis datos personales en mi perfil para que queden almacenados de forma segura entre sesiones."*
 
-### 4. Estructura del Backlog para Flow (TP4)
-Se estructuró el backlog del proyecto de forma simple y clara para la verificación automática de la app Flow:
-- **Épica (#6)**: `EPIC: Integración Continua (CI) para Flow`
-- **Historia de Usuario (#7)**: `CI: Verificación automática de la app en cada Pull Request` (con Criterios de Aceptación sencillos de compilación).
-- **Tareas Técnicas (#8, #9, #13)**:
-  - `#8`: `Escribir el workflow inicial .github/workflows/ci.yml` (Cerrada automáticamente vía PR #11 para demostrar la trazabilidad).
-  - `#9`: `Configurar la compilación de la imagen Docker en el pipeline` (En backlog).
-  - `#13`: `Proteger la rama main con el check obligatorio del CI` (En backlog).
-- **Bug (#10)**: `El servidor no arranca si falta el archivo .env` (Bug independiente al costado del árbol).
+### 4. Estructura del Backlog y Jerarquía
+Se estructuró el backlog del proyecto siguiendo la jerarquía canónica de la materia:
+- **Épica (#6)**: `EPIC: Pipeline DevOps completo para mi app`
+- **Historia de Usuario (#7)**: `CI: build y tests automáticos en cada PR` (con 4 Criterios de Aceptación verificables).
+- **Tareas Técnicas (#8, #9)**:
+  - `#8`: `Escribir el workflow de build y tests` (Cerrada automáticamente mediante el PR #11 que incorporó `.github/workflows/ci.yml` demostrando trazabilidad).
+  - `#9`: `Publicar el reporte de tests como artefacto` (Queda abierta en To Do para continuar en los TP4/TP5).
+- **Bug (#10)**: `El front carga sin la lista cuando el back todavía no responde` (Bug independiente al costado del árbol).
 
 ### 5. Declaración de Uso de IA
 Este TP fue realizado con la asistencia del agente de IA **Antigravity** (Google DeepMind) para la generación de labels, automatización de la creación de issues vía CLI de GitHub, vinculación de trazabilidad entre PR e issues y redacción de la sección de decisiones.
+
 
 
 
