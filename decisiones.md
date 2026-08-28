@@ -90,18 +90,19 @@ Este TP contó con el soporte del agente de IA **Antigravity** (Google DeepMind)
   3. **Beneficio trivial**: "Para guardar los datos" no explica el valor de negocio real ni ayuda al Product Owner a priorizar el backlog.
 - **Reescritura correcta**: *"Como usuario registrado quiero poder guardar mis datos personales en mi perfil para que queden almacenados de forma segura entre sesiones."*
 
-### 4. Estructura Real del Backlog (Flow & TP4)
-Se estructuró el backlog del proyecto con ítems reales para la app **Flow** y las entregas de CI/CD del TP4:
-- **Épica (#6)**: `EPIC: Pipeline de CI/CD e Integración Continua para Flow`
-- **Historia de Usuario (#7)**: `CI: Pipeline de verificación automatizada as Code para Flow` (con 4 Criterios de Aceptación verificables).
+### 4. Estructura del Backlog para Flow (TP4)
+Se estructuró el backlog del proyecto de forma simple y clara para la verificación automática de la app Flow:
+- **Épica (#6)**: `EPIC: Integración Continua (CI) para Flow`
+- **Historia de Usuario (#7)**: `CI: Verificación automática de la app en cada Pull Request` (con Criterios de Aceptación sencillos de compilación).
 - **Tareas Técnicas (#8, #9, #13)**:
-  - `#8`: `Escribir el workflow inicial .github/workflows/ci.yml para compilación y tests` (Cerrada automáticamente vía PR #11 para probar trazabilidad).
-  - `#9`: `Configurar compilación con Docker Build y cache de capas en GitHub Actions` (En backlog para TP4).
-  - `#13`: `Configurar Status Check obligatorio en protecciones de main y agregar Status Badge al README` (En backlog para TP4).
-- **Bug (#10)**: `El contenedor de backend falla si PostgreSQL tarda en responder la primera migración` (Al costado de la jerarquía).
+  - `#8`: `Escribir el workflow inicial .github/workflows/ci.yml` (Cerrada automáticamente vía PR #11 para demostrar la trazabilidad).
+  - `#9`: `Configurar la compilación de la imagen Docker en el pipeline` (En backlog).
+  - `#13`: `Proteger la rama main con el check obligatorio del CI` (En backlog).
+- **Bug (#10)**: `El servidor no arranca si falta el archivo .env` (Bug independiente al costado del árbol).
 
 ### 5. Declaración de Uso de IA
 Este TP fue realizado con la asistencia del agente de IA **Antigravity** (Google DeepMind) para la generación de labels, automatización de la creación de issues vía CLI de GitHub, vinculación de trazabilidad entre PR e issues y redacción de la sección de decisiones.
+
 
 
 
