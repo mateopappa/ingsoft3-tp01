@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow — Personal Activity Tracker</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Toast Notification Container -->
+        <div id="toast-container" class="toast-container"></div>
+
+        <!-- AUTH SCREEN -->
+        <div id="auth-screen" class="auth-screen">
+            <div class="auth-card">
+                <div class="brand">
+                    <div class="brand-logo">⏱️</div>
+                    <h1>Flow</h1>
+                    <p class="tagline">Personal Activity & Time Tracker</p>
+                </div>
+
+                <div class="auth-tabs">
+                    <button type="button" class="tab-btn active" id="tab-login-btn">Log In</button>
+                    <button type="button" class="tab-btn" id="tab-register-btn">Register</button>
+                </div>
+
+                <form id="auth-form" class="auth-form">
+                    <div class="form-group">
+                        <label for="auth-email">Email</label>
+                        <input type="email" id="auth-email" required placeholder="you@example.com" autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="auth-password">Password</label>
+                        <input type="password" id="auth-password" required placeholder="••••••••" minlength="8" autocomplete="current-password">
+                        <span class="field-hint" id="password-hint">Minimum 8 characters</span>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" id="auth-submit-btn">Log In</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- MAIN APPLICATION SCREEN -->
+        <div id="main-screen" class="main-screen hidden">
+            <!-- Top Navigation Bar -->
+            <header class="navbar">
+                <div class="nav-left">
+                    <span class="nav-logo">⏱️</span>
+                    <span class="nav-title">Flow</span>
+                </div>
+                <div class="nav-right">
+                    <span id="user-email-display" class="user-badge">user@example.com</span>
+                    <button type="button" id="manage-categories-btn" class="btn btn-secondary btn-sm">🏷️ Categories</button>
+                    <button type="button" id="logout-btn" class="btn btn-outline btn-sm">Log Out</button>
+                </div>
+            </header>
+
+            <main class="content-container">
+                <!-- TOP GRID: QUICK TIMER + STAT CARDS -->
+                <section class="dashboard-top-grid">
+                    <!-- QUICK ACTIVITY & TIMER CARD -->
+                    <div class="card timer-card">
+                        <div class="card-header">
+                            <h2>What are you working on?</h2>
+                            <span id="timer-status-badge" class="badge badge-idle">Idle</span>
+                        </div>
+
+                        <!-- Idle Timer View -->
+                        <div id="timer-idle-view">
+                            <form id="timer-start-form" class="timer-form">
+                                <div class="timer-inputs">
+                                    <input type="text" id="timer-desc" class="input-lg" placeholder="e.g. Working on thesis..." required>
+                                    <select id="timer-category-select" class="select-lg" required>
+                                        <option value="" disabled selected>Select Category</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-lg btn-start">
+                                    <span class="play-icon">▶</span> Start Timer
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Active Running Timer View -->
+                        <div id="timer-active-view" class="hidden">
+                            <div class="active-timer-display">
+                                <div class="active-timer-meta">
+                                    <span id="active-category-pill" class="category-pill">Category</span>
+                                    <h3 id="active-description-display">Activity Description</h3>
+                                </div>
+                                <div class="timer-clock" id="active-timer-clock">00:00:00</div>
+                            </div>
+                            <div class="timer-actions">
+                                <button type="button" id="stop-timer-btn" class="btn btn-danger btn-lg">
+                                    <span>■</span> Stop & Save
+                                </button>
+                                <button type="button" id="discard-timer-btn" class="btn btn-outline btn-lg">
+                                    Discard
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STATS SUMMARY CARDS -->
+                    <div class="stats-column">
+                        <div class="card stat-card">
+                            <span class="stat-label">Today</span>
+                            <div class="stat-value" id="stat-today">0m</div>
+                            <span class="stat-subtext">Total tracked today</span>
+                        </div>
+                        <div class="card stat-card">
+                            <span class="stat-label">This Week</span>
+                            <div class="stat-value" id="stat-week">0m</div>
+                            <span class="stat-subtext">Monday to Sunday</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- MIDDLE GRID: CATEGORY DISTRIBUTION & 7-DAY BAR CHART -->
+                <section class="dashboard-analytics-grid">
+                    <!-- Category Distribution -->
+                    <div class="card analytics-card">
+                        <div class="card-header">
+                            <h3>Time by Category</h3>
+                            <span class="card-subtitle">This Week</span>
+                        </div>
+                        <div id="category-distribution-container" class="distribution-list">
+                            <p class="empty-text">No tracked time for this week yet.</p>
+                        </div>
+                    </div>
+
+                    <!-- Activity by Day -->
+                    <div class="card analytics-card">
+                        <div class="card-header">
+                            <h3>Activity by Day</h3>
+                            <span class="card-subtitle">Mon – Sun</span>
+                        </div>
+                        <div class="weekly-chart" id="weekly-chart-container">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- BOTTOM SECTION: ACTIVITY HISTORY & LOG -->
+                <section class="card history-card">
+                    <div class="history-header">
+                        <div class="history-title-group">
+                            <h2>Activity History</h2>
+                            <span id="history-count-badge" class="count-badge">0 activities</span>
+                        </div>
+                        <button type="button" id="open-manual-log-btn" class="btn btn-primary">
+                            + Log Activity Manually
+                        </button>
+                    </div>
+
+                    <!-- Filter Controls -->
+                    <div class="filter-toolbar">
+                        <div class="search-box">
+                            <input type="text" id="filter-search" placeholder="🔍 Search description or notes...">
+                        </div>
+                        <div class="filter-selects">
+                            <select id="filter-category">
+                                <option value="">All Categories</option>
+                            </select>
+                            <input type="date" id="filter-from-date" title="From Date">
+                            <input type="date" id="filter-to-date" title="To Date">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="filter-favorite-only"> ⭐ Favorites only
+                            </label>
+                            <button type="button" id="clear-filters-btn" class="btn btn-outline btn-sm">Clear</button>
+                        </div>
+                    </div>
+
+                    <!-- Activity History Table -->
+                    <div class="table-responsive">
+                        <table class="activity-table">
+                            <thead>
+                                <tr>
+                                    <th width="40">⭐</th>
+                                    <th>Date</th>
+                                    <th>Category</th>
+                                    <th>Description</th>
+                                    <th>Duration</th>
+                                    <th>Note</th>
+                                    <th width="100" class="text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activity-table-body">
+                                <tr>
+                                    <td colspan="7" class="text-center empty-state">No activities recorded yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- MODAL: MANUAL ACTIVITY LOG / EDIT -->
+        <div id="activity-modal" class="modal hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3 id="activity-modal-title">Log Activity</h3>
+                    <button type="button" class="modal-close-btn" data-close-modal>&times;</button>
+                </div>
+                <form id="activity-modal-form">
+                    <input type="hidden" id="modal-activity-id">
+                    <div class="form-group">
+                        <label for="modal-description">Description *</label>
+                        <input type="text" id="modal-description" required placeholder="What did you do?">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-half">
+                            <label for="modal-category">Category *</label>
+                            <select id="modal-category" required></select>
+                        </div>
+                        <div class="form-group col-half">
+                            <label for="modal-date">Date *</label>
+                            <input type="date" id="modal-date" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-half">
+                            <label for="modal-hours">Hours</label>
+                            <input type="number" id="modal-hours" min="0" max="23" value="1" placeholder="0">
+                        </div>
+                        <div class="form-group col-half">
+                            <label for="modal-minutes">Minutes</label>
+                            <input type="number" id="modal-minutes" min="0" max="59" value="0" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-note">Note (optional)</label>
+                        <textarea id="modal-note" rows="3" placeholder="Additional details or context..."></textarea>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="modal-favorite"> Mark as favorite ⭐
+                        </label>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-outline" data-close-modal>Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="modal-submit-btn">Save Activity</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: CATEGORY MANAGEMENT -->
+        <div id="categories-modal" class="modal hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3>Manage Categories</h3>
+                    <button type="button" class="modal-close-btn" data-close-modal>&times;</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Create new category form -->
+                    <form id="create-category-form" class="category-create-row">
+                        <input type="color" id="new-cat-color" value="#4F46E5" class="color-picker" title="Choose color">
+                        <input type="text" id="new-cat-name" placeholder="New category name..." required maxlength="50">
+                        <button type="submit" class="btn btn-primary btn-sm">+ Add</button>
+                    </form>
+
+                    <!-- Category list -->
+                    <div class="category-management-list" id="category-mgmt-list">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" data-close-modal>Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Controller -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

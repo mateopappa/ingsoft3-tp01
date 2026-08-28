@@ -39,3 +39,34 @@ Los resultados se verificaron en cada paso de la siguiente manera:
 - **Release**: se verificó la URL de la release publicada (`https://github.com/mateopappa/ingsoft3-tp01/releases/tag/v1.0.0`).
 
 Todos los conceptos de la guía (qué es una rama, cómo funciona un PR, por qué ocurre un conflicto, qué es SemVer) fueron comprendidos y pueden ser defendidos oralmente.
+
+---
+
+## TP2 — Contenedores: La App del Semestre
+
+### 1. Elección de la Aplicación
+Se seleccionó la aplicación **Flow — Personal Activity Tracker** para el desarrollo de la materia.
+- **Justificación según criterios**:
+  - **Arquitectura de 3 capas**: Frontend estático en Nginx, Backend REST API en Go 1.24 y Base de datos relacional PostgreSQL 16.
+  - **Rapidez y Cero Fricción**: Se compila en milisegundos, inicia en menos de un segundo y requiere un consumo mínimo de RAM/CPU.
+  - **Cero dependencias pagas**: Funciona 100% de manera nativa y containerizada sin requerir tarjetas de crédito ni servicios externos costosos.
+  - **Idoneidad para CI/CD**: Es ideal para implementar pipelines de CI (tests unitarios + linter), escaneo de vulnerabilidades, empaquetado de imágenes multi-stage y despliegues continuos (CD) en los TPs 4 a 9.
+
+### 2. Decisiones de Contenerización y Dockerfiles
+- **Backend (`backend/Dockerfile`)**:
+  - **Multi-stage build**: Se utilizó una etapa de compilación (`golang:1.24-alpine`) donde se descargan dependencias y se compila el ejecutable estático con `CGO_ENABLED=0` y `-ldflags="-s -w"`.
+  - **Etapa de ejecución mínima**: La imagen final parte de `alpine:3.20` conteniendo únicamente el binario compilado y certificados CA.
+  - **Seguridad**: Se creó un usuario sin privilegios (`appuser:appgroup`) para ejecutar el proceso en lugar de `root`.
+  - **Reducción de tamaño**: La imagen final pesa solo **23.5 MB**, comparada contra los >800 MB que pesaría una imagen con el SDK completo de Go.
+- **Frontend (`frontend/Dockerfile` & `nginx.conf`)**:
+  - Se utiliza `nginx:alpine` para servir la SPA estática.
+  - Se configuró `nginx.conf` como un proxy inverso de la API REST (`location /api/ { proxy_pass http://backend:8080; }`), resolviendo peticiones cross-origin en el cliente sin necesidad de habilitar CORS ni hardcodear URLs absolutas.
+
+### 3. Estrategia de Persistencia y Redes
+- **Persistencia**: La base de datos PostgreSQL utiliza un volumen administrado por Docker (`db_data:/var/lib/postgresql/data`). Esto garantiza que los datos de las actividades persistan entre reinicios (`docker compose down` seguido de `docker compose up`), manteniéndose aislados de la capa de escritura efímera del contenedor.
+- **Red interna y DNS**: Los contenedores se comunican dentro de la red privada de Compose mediante resolución DNS por nombre de servicio (el backend se conecta a `db:5432`).
+- **Healthcheck**: El servicio `backend` depende de la condición `service_healthy` del contenedor `db`, ejecutando `pg_isready` para evitar fallos de conexión al arrancar el servidor antes de que PostgreSQL acepte conexiones.
+
+### 4. Declaración de Uso de IA
+Este TP contó con el soporte del agente de IA **Antigravity** (Google DeepMind) para auditar la estructura de archivos, verificar comandos de Compose y redactar la documentación. Todos los manifiestos (`Dockerfile`, `docker-compose.yml`, `nginx.conf`) fueron verificados ejecutando compilaciones, pruebas de persistencia y suites unitarias (`make test`) localmente.
+

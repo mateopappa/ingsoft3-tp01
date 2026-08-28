@@ -14,3 +14,9 @@ build/
 Thumbs.db
 .vscode/
 .idea/
+
+# notas personales y guías de defensa (no versionadas)
+defensa-oral.md
+**/defensa-oral.md
+defensa-*.md
+
