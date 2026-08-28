@@ -56,6 +56,9 @@ URL: https://github.com/mateopappa/ingsoft3-tp01/releases/tag/v1.0.0
 ## TP2 — Contenedores: La App del Semestre
 
 ### 1. Sistema corriendo End-to-End con Docker Compose
+
+![Docker Compose Up y estado de contenedores](img/tp2/tp2-compose.png)
+
 Salida de `docker compose up -d` y estado de los contenedores (`docker compose ps`):
 
 ```text
@@ -71,13 +74,25 @@ ingsoft3-tp01-db-1       postgres:16-alpine      "docker-entrypoint.s…"   db  
 ingsoft3-tp01-frontend-1 flow-frontend:dev       "/docker-entrypoint.…"   frontend   10 seconds ago   Up 9 seconds             0.0.0.0:3000->80/tcp
 ```
 
+---
+
 ### 2. Prueba de Persistencia de la Base de Datos
+
+![Datos registrados en la aplicación](img/tp2/tp2-persistencia.png)
+
+![Persistencia tras reiniciar contenedores](img/tp2/tp2persistencia-2.png)
+
 - **Prueba 1 (Conservación de datos)**:
   Se cargaron datos de actividades en la app y luego se ejecutó `docker compose down`. Al reiniciar los contenedores con `docker compose up -d`, PostgreSQL volvió a montar el volumen `db_data` y las actividades registradas permanecieron intactas.
 - **Prueba 2 (Limpieza total con `-v`)**:
   Al ejecutar `docker compose down -v`, Docker removió explícitamente el volumen `db_data`, restableciendo la base de datos a su estado inicial.
 
+---
+
 ### 3. Comparación de Tamaño de Imágenes (Multi-Stage Build)
+
+![Comparación de tamaño de imágenes en docker images](img/tp2/tp2-size.png)
+
 Salida de `docker images`:
 
 ```text
@@ -89,9 +104,16 @@ golang                             1.24-alpine (SDK Base)                    ~80
 
 * **Resultado**: El backend multi-stage logra un peso final de **23.5 MB**, reduciendo más del 97% del tamaño en comparación con la imagen oficial de Go SDK (~800 MB).
 
+---
+
 ### 4. Imágenes Publicadas en el Registry (GHCR) y Release `v2.0.0`
+
+![Release v2.0.0 publicada en GitHub](img/tp2/tp2-release.png)
+
 - **Imágenes en GHCR**:
   - `ghcr.io/mateopappa/flow-backend:v2.0.0`
   - `ghcr.io/mateopappa/flow-frontend:v2.0.0`
 - **Release `v2.0.0`**: Publicada en GitHub con tag anotado sobre `main`.
+URL: https://github.com/mateopappa/ingsoft3-tp01/releases/tag/v2.0.0
+
 
