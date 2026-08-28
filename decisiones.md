@@ -70,3 +70,27 @@ Se seleccionó la aplicación **Flow — Personal Activity Tracker** para el des
 ### 4. Declaración de Uso de IA
 Este TP contó con el soporte del agente de IA **Antigravity** (Google DeepMind) para auditar la estructura de archivos, verificar comandos de Compose y redactar la documentación. Todos los manifiestos (`Dockerfile`, `docker-compose.yml`, `nginx.conf`) fueron verificados ejecutando compilaciones, pruebas de persistencia y suites unitarias (`make test`) localmente.
 
+---
+
+## TP3 — Planificación DevOps
+
+### 1. Duración del Sprint e Iteraciones
+- **Elección**: Se fijó una duración de **2 semanas** para la iteración (`Sprint 1`).
+- **Justificación**: Se alineó con el calendario de entregas de la materia y el ritmo de desarrollo de incrementos de CI/CD. Permite tener metas alcanzables y acotadas sin acumular trabajo en progreso innecesario.
+
+### 2. Límite de Trabajo en Progreso (WIP Limit)
+- **Elección**: Se configuró un límite de **2 ítems simultáneos** en la columna *In Progress*.
+- **Justificación**: El objetivo central de la filosofía Kanban/DevOps es "empezar menos, terminar más". Establecer un WIP limit de 2 evita la multitarea excesiva, reduce el cambio de contexto y visibiliza cuellos de botella (poniendo el contador en rojo si se sobrepasa) antes de continuar incorporando nuevas tareas.
+
+### 3. Diagnóstico de la Historia Mal Escrita
+- **Historia analizada**: *"Como desarrollador quiero crear la tabla usuarios para guardar los datos."*
+- **Diagnóstico (Por qué está mal escrita)**:
+  1. **Rol incorrecto**: El desarrollador es quien implementa la solución, no el cliente o usuario final que percibe el valor de negocio.
+  2. **Es una Tarea Técnica disfrazada**: Crear una tabla de base de datos no es una capacidad funcional de usuario observable; es un paso de implementación técnica (debería ser un Task bajo una Story).
+  3. **Beneficio trivial**: "Para guardar los datos" no explica el valor de negocio real ni ayuda al Product Owner a priorizar el backlog.
+- **Reescritura correcta**: *"Como usuario registrado quiero poder guardar mis datos personales en mi perfil para que queden almacenados de forma segura entre sesiones."*
+
+### 4. Declaración de Uso de IA
+Este TP fue realizado con la asistencia del agente de IA **Antigravity** (Google DeepMind) para la generación de labels, automatización de la creación de issues vía CLI de GitHub, vinculación de trazabilidad entre PR e issues y redacción de la sección de decisiones.
+
+
