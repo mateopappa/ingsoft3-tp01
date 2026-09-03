@@ -21,6 +21,7 @@ import (
 	"flow/internal/timer"
 	"flow/migrations"
 	"flow/web"
+	"paquete/inexistente"
 )
 
 func main() {
