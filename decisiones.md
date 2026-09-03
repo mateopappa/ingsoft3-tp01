@@ -102,6 +102,52 @@ Se estructuró el backlog del proyecto siguiendo la jerarquía canónica de la m
 ### 5. Declaración de Uso de IA
 Este TP fue realizado con la asistencia del agente de IA **Antigravity** (Google DeepMind) para la generación de labels, automatización de la creación de issues vía CLI de GitHub, vinculación de trazabilidad entre PR e issues y redacción de la sección de decisiones.
 
+---
+
+## TP4 — CI: Pipelines as Code
+
+### 1. Estructura Elegida del Pipeline
+- **Jobs definidos**: `build-backend` y `build-frontend`.
+- **Justificación de los jobs**: La aplicación Flow está compuesta por dos componentes contenerizados independientes: el backend REST en Go y el frontend SPA servido por Nginx. No existe un contenedor monolítico único; por lo tanto, el pipeline modela la realidad de la arquitectura del software.
+- **Por qué corren en paralelo**:
+  - En GitHub Actions, los jobs se ejecutan en máquinas virtuales separadas y limpias (`ubuntu-latest`).
+  - Al no existir una dependencia causal entre la construcción de la imagen de Nginx y la compilación del binario en Go, no hay motivo para serializarlos (`needs`).
+  - Ejecutar en paralelo minimiza el tiempo de ciclo (Lead Time) y otorga feedback rápido al desarrollador: la duración total de la corrida es determinada por el job más lento ($\approx 19$s con caché) y no por la suma acumulativa de ambos.
+  - Los jobs no comparten sistema de archivos ni memoria; cada uno baja su copia limpia del código con `actions/checkout@v6`.
+
+### 2. Estrategia de Caché de Capas (GHA)
+- **Mecanismo adoptado**: Se utilizó el backend de caché nativo de GitHub Actions provisto por Docker Buildx (`cache-from: type=gha` y `cache-to: type=gha,mode=max`).
+- **Aislamiento por Scope**: Se configuró `scope=backend` para el backend y `scope=frontend` para el frontend. Esto evita condiciones de carrera donde un job sobreescriba los metadatos de caché del otro en el almacenamiento del repositorio.
+- **Capas reutilizadas**:
+  - En `build-backend`: Gracias a la estructura multi-stage del Dockerfile del TP2, se copian primero `go.mod` y `go.sum` antes de hacer `RUN go mod download`. Cuando un commit altera código en `cmd/` o `internal/`, las capas base del SDK y la descarga de dependencias externas se recuperan en estado `CACHED`. Esto redujo el tiempo del job de 54 segundos en la corrida inicial a 19 segundos en la segunda corrida (reducción del 65%).
+  - En `build-frontend`: La capa base de `nginx:alpine` y la configuración estática se reutilizan inmediatamente.
+- **Propiedad fundamental del caché**: El caché es una optimización efímera y no transaccional. GitHub puede desalojarlo en cualquier momento por políticas de cuota (límite de 10 GB por repo) o tiempo de inactividad (7 días). Si el caché desaparece, el pipeline **no falla**: se degrada graciosamente reconstruyendo las capas desde cero, tardando únicamente unos segundos más. No existen dependencias ocultas atadas al estado del runner.
+
+### 3. Construcción vía Dockerfile vs Compilación Ad-Hoc
+- **Decisión**: El pipeline delega la construcción estrictamente en `docker/build-push-action@v7` apuntando al `Dockerfile` de cada servicio, sin ejecutar comandos sueltos de compilación (`go build` o `npm`) en el runner de GitHub.
+- **Justificación**:
+  1. **Principio de Fuente Única de Verdad**: Si el pipeline compilara con herramientas del runner y luego el despliegue usara un Dockerfile, existirían dos definiciones divergentes del build que inevitablemente generarían inconsistencias ("compila en el CI pero falla en el contenedor").
+  2. **Paridad de Entornos**: El Dockerfile asegura que la compilación se realice exactamente bajo el SDK definido (`golang:1.24-alpine`), con las banderas de compilación estática (`CGO_ENABLED=0`) y empaquetado en Alpine minimal con el usuario `appuser`. Probar el build en CI es probar exactamente el mismo artefacto inmutable que se distribuye a producción.
+
+### 4. Required Status Checks y Demostración del Gate
+- **Configuración de protección**: Se aplicó sobre `main` la regla:
+  - `required_status_checks.contexts`: `["build-backend", "build-frontend"]`.
+  - `strict: true` (Require branches to be up to date before merging).
+  - `enforce_admins: true`.
+  - `required_approving_review_count: 0` (adecuado a desarrollo individual).
+- **Demostración práctica documentada**:
+  1. **Rojo**: En la rama `feature/demo-gate` (PR #18), se introdujo deliberadamente un import no existente en `backend/cmd/server/main.go`. El job `build-backend` falló (`conclusion: FAILURE`) y la API de GitHub reportó `mergeStateStatus: BLOCKED`, impidiendo físicamente el merge.
+  2. **Efecto de `strict: true`**: Mientras PR #18 estaba bloqueado, se abrió el PR #19 (`docs/muestra-del-freno`). Tras solucionar y mergear el PR #18, el PR #19 pasó a estado `mergeStateStatus: BEHIND`, obligando a presionar "Update branch" para re-validar los checks contra el nuevo `main` antes de habilitar el merge.
+  3. **Verde y Merge**: Se corrigió el código (`fix: saca el import que no existe`), el workflow se disparó automáticamente, ambos jobs concluyeron en `SUCCESS` (`mergeStateStatus: CLEAN`) y el PR fue mergeado exitosamente.
+
+### 5. Problemas Encontrados y Soluciones
+- **Ausencia de `CACHED` en ejecuciones solapadas**: Al disparar commits casi consecutivos, la segunda corrida iniciaba antes de que la primera finalizara la exportación de su caché (`cache-to: mode=max`). Se resolvió esperando la finalización de la primera corrida antes de enviar el commit `--allow-empty`.
+- **Visibilidad de Checks en la API de GitHub**: Para configurar los Required Status Checks, los nombres de contexto (`build-backend`, `build-frontend`) deben haber corrido previamente al menos una vez en el repositorio. Se completó primero la corrida del PR #17 y luego se aplicó la política vía API sin inconvenientes.
+
+### 6. Declaración de Uso de IA
+Este trabajo práctico fue completado con la asistencia del agente de IA **Antigravity** (Google DeepMind), que colaboró en la redacción del workflow de GitHub Actions, la automatización de la API de protección de ramas, la ejecución de la prueba de rotura/fix y la elaboración de la documentación técnica. Todos los pasos fueron verificados mediante la CLI `gh`, los logs de GitHub Actions y pruebas locales de Docker.
+
+
 
 
 
