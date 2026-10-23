@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"flow/internal/categories"
 	"flow/internal/models"
 )
 
@@ -16,12 +15,25 @@ var (
 	ErrInvalidTimerCategory  = errors.New("category does not exist or does not belong to you")
 )
 
-type Service struct {
-	repo        *Repository
-	categorySvc *categories.Service
+// TimerStore is the persistence port for active timers (injected for unit tests).
+type TimerStore interface {
+	GetActiveTimer(ctx context.Context, userID string) (*models.ActiveTimer, error)
+	CreateActiveTimer(ctx context.Context, t *models.ActiveTimer) (*models.ActiveTimer, error)
+	DeleteActiveTimer(ctx context.Context, userID string) error
+	StopTimerTx(ctx context.Context, userID string, note *string, favorite bool) (*models.Activity, error)
 }
 
-func NewService(repo *Repository, categorySvc *categories.Service) *Service {
+// CategoryFinder validates that a category exists and belongs to the user.
+type CategoryFinder interface {
+	GetCategoryByID(ctx context.Context, id, userID string) (*models.Category, error)
+}
+
+type Service struct {
+	repo        TimerStore
+	categorySvc CategoryFinder
+}
+
+func NewService(repo TimerStore, categorySvc CategoryFinder) *Service {
 	return &Service{
 		repo:        repo,
 		categorySvc: categorySvc,

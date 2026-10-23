@@ -147,7 +147,143 @@ Este TP fue realizado con la asistencia del agente de IA **Antigravity** (Google
 ### 6. Declaración de Uso de IA
 Este trabajo práctico fue completado con la asistencia del agente de IA **Antigravity** (Google DeepMind), que colaboró en la redacción del workflow de GitHub Actions, la automatización de la API de protección de ramas, la ejecución de la prueba de rotura/fix y la elaboración de la documentación técnica. Todos los pasos fueron verificados mediante la CLI `gh`, los logs de GitHub Actions y pruebas locales de Docker.
 
+---
 
+## TP5 — Calidad automatizada: tests, coverage y el umbral que frena un merge
+
+### 1. Qué lógica elegí testear y por qué
+
+Elegí las **reglas de negocio de los services** (no handlers ni SQL): son el lugar donde un bug duele de verdad en Flow.
+
+| Regla | Por qué duele si se rompe |
+|---|---|
+| Duración de actividad `> 0` | Deja entrar sesiones basura y corrompe totales del dashboard |
+| Categoría ajena / inexistente | Filtra datos entre usuarios (aislamiento) |
+| No borrar categoría en uso | Evita romper FK / historial |
+| Un solo timer activo por usuario | Invariante central del producto (HTTP 409) |
+| Password ≥ 8 / email válido | Puerta de auth |
+| `FormatDuration` y % por categoría | Lo que el usuario ve en el dashboard |
+
+Los tests viven al lado del código (`internal/*/service_test.go`), con estructura AAA y nombres que describen el comportamiento.
+
+**Frontend** (Dockerfile separado → los 4 tests + 3 técnicas sí aplican): extraje lógica pura a `frontend/src/lib/` (`format`, `validate`, `api`, `filters`) y la reutiliza `static/js/app.js` vía ES modules. Así se testea sin DOM.
+
+### 2. Stack Go + vitest (tabla «Tu stack, de un vistazo»)
+
+| Logro | Herramienta elegida |
+|---|---|
+| Dónde viven los tests | Backend: `*_test.go` en el mismo paquete lógico (`activities_test`, etc.). Frontend: `src/lib/*.test.js` |
+| Test parametrizado | Go: table-driven `t.Run` · Front: `it.each` |
+| Doble (mock) | Go: structs manuales que implementan interfaces inyectadas · Front: `vi.fn()` sobre `fetch` |
+| Medir cobertura | Go: `go test -coverprofile` · Front: `vitest run --coverage` (v8) |
+| Umbral que rompe el build | Go: script `backend/scripts/check-coverage.sh` compara el total y hace `exit 1` · Front: `coverage.thresholds` en `vitest.config.js` |
+| Qué entra en la cuenta | Go: filtro del profile a `*service.go` · Front: `coverage.include: ['src/lib/**/*.js']` |
+
+**Branch coverage en Go:** no existe en `go test -cover` (sólo sentencias). Queda declarado acá y en el Summary del job (`Branch coverage: N/A`). En frontend sí se reporta rama (vitest/v8).
+
+### 3. Refactor para poder mockear
+
+Antes, `Service` guardaba `*Repository` y `*categories.Service` concretos: no se podía reemplazar la BD en un unit test sin Postgres.
+
+**Qué cambié:** introduje puertos (interfaces) inyectados por constructor:
+
+- `activities.ActivityStore` + `CategoryFinder`
+- `categories.CategoryStore`
+- `timer.TimerStore` + `CategoryFinder`
+- `dashboard.MetricsStore`
+- `auth.UserStore` (además del `CategorySeeder` que ya existía)
+
+Los `*Repository` reales siguen cumpliendo las interfaces; `main.go` no cambia su cableado. Los tests fabrican mocks/stubs y **verifican la interacción** (p. ej. que `CreateActivity` del store **no** se llama si la categoría es inválida).
+
+### 4. Umbral de coverage: número, métrica y porqué
+
+**Medición real (suite completa, local):**
+
+| Lado | Métrica | Valor medido | Umbral |
+|---|---|---|---|
+| Backend | Statement coverage sobre `*service.go` | **~78%** | **70%** (statements) |
+| Backend | Branch | N/A (Go) | — |
+| Frontend | Lines | **~98%** | **80%** |
+| Frontend | Branches | **~89%** | **75%** |
+
+**Por qué esos números:** el umbral del backend está anclado a la medición real (~78) y frena si baja, sin ser inalcanzable. Para subirlo a 85 habría que cubrir CRUD triviales del service (`DeleteActivity`, `ListActivities`, `SeedDefaultCategories`) que hoy sólo delegan al repo. En frontend el umbral es más holgado respecto al 98% actual porque el gate tiene que fallar ante lógica nueva sin tests, no ante ruido de ramas menores.
+
+Prueba (corrida con summary + artefacto): ver links de Actions pegados abajo tras el merge del PR de implementación.
+
+### 5. Qué dejé afuera de la cuenta (y por qué)
+
+**Backend — fuera del umbral:**
+
+| Qué | Por qué |
+|---|---|
+| `cmd/server/main.go` (arranque) | Cableado; si falla, la app no levanta |
+| `internal/*/handler.go` | Adaptadores HTTP; se prueban en e2e (TP7) |
+| `internal/*/repository.go` | SQL/infra; unit tests no deben abrir Postgres |
+| `internal/models/*` | Structs de datos sin reglas |
+| `migrations/*`, `database/*`, `config/*`, middleware | Arranque / generado / infra |
+
+**Frontend — fuera del umbral:**
+
+| Qué | Por qué |
+|---|---|
+| `static/js/app.js` | Controlador DOM (listeners, render); sin jsdom a propósito |
+| `index.html`, CSS, nginx | No es lógica de negocio |
+
+Excluir eso **no** es esconder reglas: las reglas viven en `service.go` / `src/lib`.
+
+### 6. Por qué coverage alto no garantiza calidad (ejemplo propio)
+
+Un test que llame `FormatDuration(60)` y **no haga assert** sumaría línea al 100% de esa función y no detectaría si mañana devolviera `"1h"`. Coverage mide ejecución, no verificación. Mis tests de timer con mock fallan si alguien quita el check de «ya hay timer activo» aunque el coverage del archivo siga alto: el assert sobre `createCalls == 0` es la verificación que la métrica no ve.
+
+### 7. Ejercicio del camino sin cubrir (rama de código)
+
+- **Línea:** `frontend/src/lib/validate.js` — `if (!activityDate) { return { ok: false, error: 'Activity date is required' }; }` (aprox. líneas 33–35).
+- **Entrada que la recorrería:** `validateActivityForm({ description: 'Coding', categoryId: 'cat-1', activityDate: '', hours: 1, minutes: 0 })`.
+- **Decisión:** **no lo agregué** en esta entrega. El reporte ya marca esa rama en rojo; dejarla visible documenta el límite de la métrica. Si mañana alguien borra el check de fecha, el umbral de branches aún puede sostenerse por otras ramas — por eso el test de borde importa más que el porcentaje.
+
+(Backend: el branch `ActivityDate == ""` → default `time.Now()` en `CreateActivity` tampoco tiene test dedicado; misma decisión.)
+
+### 8. Quality gate y required checks
+
+Los jobs siguen llamándose `build-backend` y `build-frontend` (required desde TP4). Ahora, adentro de cada uno:
+
+1. Construyen la imagen final (como TP4).
+2. Construyen `target: test` con `load: true`.
+3. `docker run` ejecuta la suite + umbral; si el número no alcanza, el job falla → merge bloqueado.
+
+No hay jobs nuevos: el freno de cobertura reutiliza los mismos required checks.
+
+### 9. Demostración del freno (dos PRs)
+
+> Los links concretos se completan al cerrar la secuencia en GitHub (corrida roja por umbral + PR mergeado + PR abierto en rojo).
+
+| Evidencia | URL |
+|---|---|
+| Corrida verde con coverage en Summary + artefactos | _(actions/runs/… — se pega tras CI verde del PR de implementación)_ |
+| Corrida **roja por umbral** (compila, tests pasan, coverage corta) | _(actions/runs/…)_ |
+| Secuencia rojo → tests → verde → merge | _(pull/N mergeado)_ |
+| Freno vigente (PR **abierto** en rojo hasta la defensa) | _(pull/M abierto)_ |
+
+### 10. Problemas encontrados y soluciones
+
+| Problema | Solución |
+|---|---|
+| Tests viejos en `tests/unit` reimplementaban reglas sin llamar al service (coverage 0 útil) | Se reescribieron tests reales con mocks sobre interfaces |
+| `go test -coverpkg` sobre el paquete entero daba ~16% (handlers/repos en 0%) | Script filtra el profile a `*service.go` antes de evaluar el umbral |
+| Go 1.24 en `go.mod` vs toolchain local 1.22 | `GOTOOLCHAIN=auto` descarga 1.24; CI usa `golang:1.24-alpine` |
+| Frontend sin bundler + necesidad de testear lógica | ES modules en `src/lib` + `type="module"` en `index.html`; vitest cubre sólo `src/lib` |
+| Etapa de test del front necesita vitest | `npm ci` **sin** `--omit=dev` en la etapa `build`; la imagen `final` (nginx) no lleva Node |
+
+### 11. Declaración de uso de IA
+
+Este TP se completó con asistencia del agente de IA **Cursor (Auto/Composer)**. La IA ayudó a refactorizar interfaces, escribir la suite, el script de umbral Go, vitest y el workflow. **Verificación humana / automatizada:**
+
+- `go test ./internal/...` y `./scripts/check-coverage.sh` (umbral 70%) en verde localmente.
+- `npm run test:coverage` en verde con thresholds 80/75.
+- Cada assert de la suite se puede explicar (qué regla rompe si se invierte).
+- Los links de Actions/PR de la §9 se contrastan contra corridas reales, no capturas.
+
+Si un test fue sugerido por IA y no puedo decir qué caso **no** cubre, no cuenta como entregado: por eso el camino sin cubrir de `activityDate` quedó explícito arriba.
 
 
 

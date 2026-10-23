@@ -2,8 +2,13 @@
  * FLOW — PERSONAL ACTIVITY TRACKER
  * Vanilla ES6+ Application Controller
  */
+import { formatSeconds } from './lib/format.js';
+import { validateAuthInput, validateActivityForm } from './lib/validate.js';
+import { createApiClient } from './lib/api.js';
+import { buildActivityQueryParams } from './lib/filters.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+    const api = createApiClient();
     // --- STATE ---
     let currentUser = null;
     let categories = [];
@@ -80,34 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- API CLIENT HELPERS ---
     async function apiRequest(endpoint, options = {}) {
-        const defaultHeaders = {
-            'Content-Type': 'application/json',
-        };
-
-        const config = {
-            ...options,
-            headers: {
-                ...defaultHeaders,
-                ...options.headers,
-            },
-        };
-
-        try {
-            const response = await fetch(endpoint, config);
-            if (response.status === 204) {
-                return null;
-            }
-            const data = await response.json();
-            if (!response.ok) {
-                const error = new Error(data.error || 'An error occurred');
-                error.status = response.status;
-                error.code = data.code;
-                throw error;
-            }
-            return data;
-        } catch (err) {
-            throw err;
-        }
+        return api.request(endpoint, options);
     }
 
     function showToast(message, type = 'success') {
@@ -141,8 +119,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const email = authEmail.value.trim();
         const password = authPassword.value;
 
-        if (!email || password.length < 8) {
-            showToast('Password must be at least 8 characters long', 'error');
+        const authCheck = validateAuthInput(email, password);
+        if (!authCheck.ok) {
+            showToast(authCheck.error, 'error');
             return;
         }
 
@@ -517,12 +496,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ACTIVITIES LIST & FILTERING ---
     async function loadActivities() {
         try {
-            const params = new URLSearchParams();
-            if (filterSearch.value.trim()) params.set('search', filterSearch.value.trim());
-            if (filterCategory.value) params.set('category_id', filterCategory.value);
-            if (filterFromDate.value) params.set('from_date', filterFromDate.value);
-            if (filterToDate.value) params.set('to_date', filterToDate.value);
-            if (filterFavoriteOnly.checked) params.set('favorite', 'true');
+            const params = buildActivityQueryParams({
+                search: filterSearch.value,
+                categoryId: filterCategory.value,
+                fromDate: filterFromDate.value,
+                toDate: filterToDate.value,
+                favoriteOnly: filterFavoriteOnly.checked,
+            });
 
             const data = await apiRequest(`/api/activities?${params.toString()}`);
             activities = data.activities || [];
@@ -700,18 +680,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const activity_date = modalDate.value;
         const hours = parseInt(modalHours.value || '0', 10);
         const minutes = parseInt(modalMinutes.value || '0', 10);
-        const duration_seconds = hours * 3600 + minutes * 60;
         const note = modalNote.value.trim() || null;
         const favorite = modalFavorite.checked;
 
-        // Behavior 1: Client side validation
-        if (!description || !category_id || !activity_date || duration_seconds <= 0) {
-            showToast('Please enter a description, category, date, and duration > 0', 'error');
+        // Behavior 1: Client side validation (pure rule in lib/validate.js)
+        const formCheck = validateActivityForm({
+            description,
+            categoryId: category_id,
+            activityDate: activity_date,
+            hours,
+            minutes,
+        });
+        if (!formCheck.ok) {
+            showToast(formCheck.error, 'error');
             return;
         }
 
         try {
-            const body = { description, category_id, activity_date, duration_seconds, note, favorite };
+            const body = {
+                description,
+                category_id,
+                activity_date,
+                duration_seconds: formCheck.durationSeconds,
+                note,
+                favorite,
+            };
             if (id) {
                 await apiRequest(`/api/activities/${id}`, {
                     method: 'PUT',
@@ -746,14 +739,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function closeAllModals() {
         activityModal.classList.add('hidden');
         categoriesModal.classList.add('hidden');
-    }
-
-    function formatSeconds(seconds) {
-        if (!seconds || seconds <= 0) return '0m';
-        const hrs = Math.floor(seconds / 3600);
-        const mins = Math.floor((seconds % 3600) / 60);
-        if (hrs > 0) return `${hrs}h ${pad(mins)}m`;
-        return `${mins}m`;
     }
 
     // --- STARTUP ---

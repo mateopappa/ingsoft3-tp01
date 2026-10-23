@@ -4,6 +4,10 @@ bin/
 obj/
 dist/
 build/
+coverage/
+TestResults/
+*.out
+backend/server
 
 # secretos: NUNCA se versionan
 .env
