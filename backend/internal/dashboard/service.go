@@ -110,3 +110,49 @@ func FormatDuration(seconds int) string {
 	}
 	return fmt.Sprintf("%dm", minutes)
 }
+
+// GoalProgress computes how close the user is to a weekly time goal.
+// Returns a percentage clamped to [0, 100]. Used by the dashboard goal widget.
+// TP5 demo: intentionally landed without tests first to exercise the coverage gate.
+func GoalProgress(weekSeconds, goalSeconds int) int {
+	if goalSeconds <= 0 {
+		return 0
+	}
+	if weekSeconds <= 0 {
+		return 0
+	}
+	pct := int((float64(weekSeconds) / float64(goalSeconds)) * 100)
+	if pct > 100 {
+		return 100
+	}
+	if pct < 0 {
+		return 0
+	}
+	return pct
+}
+
+// RemainingToGoal returns how many seconds are left to hit the weekly goal.
+func RemainingToGoal(weekSeconds, goalSeconds int) int {
+	if goalSeconds <= 0 {
+		return 0
+	}
+	left := goalSeconds - weekSeconds
+	if left < 0 {
+		return 0
+	}
+	return left
+}
+
+// ClassifyGoalStatus labels progress for the UI badge.
+func ClassifyGoalStatus(progressPercent int) string {
+	if progressPercent <= 0 {
+		return "not_started"
+	}
+	if progressPercent < 50 {
+		return "behind"
+	}
+	if progressPercent < 100 {
+		return "on_track"
+	}
+	return "completed"
+}
