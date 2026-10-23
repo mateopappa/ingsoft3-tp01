@@ -255,14 +255,19 @@ No hay jobs nuevos: el freno de cobertura reutiliza los mismos required checks.
 
 ### 9. Demostración del freno (dos PRs)
 
-> Los links concretos se completan al cerrar la secuencia en GitHub (corrida roja por umbral + PR mergeado + PR abierto en rojo).
-
 | Evidencia | URL |
 |---|---|
-| Corrida verde con coverage en Summary + artefactos | _(actions/runs/… — se pega tras CI verde del PR de implementación)_ |
-| Corrida **roja por umbral** (compila, tests pasan, coverage corta) | _(actions/runs/…)_ |
-| Secuencia rojo → tests → verde → merge | _(pull/N mergeado)_ |
-| Freno vigente (PR **abierto** en rojo hasta la defensa) | _(pull/M abierto)_ |
+| Corrida verde con coverage en Summary + artefactos (`coverage-backend`, `coverage-frontend`) | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40000635837 |
+| Corrida **roja por umbral** (compila; suite vieja verde; coverage corta) | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40001080013 |
+| Secuencia rojo → tests → verde → merge | https://github.com/mateopappa/ingsoft3-tp01/pull/22 |
+| Freno vigente (PR **abierto** en rojo hasta la defensa) | https://github.com/mateopappa/ingsoft3-tp01/pull/23 |
+
+**Detalle de la corrida roja** (`40001080013`):
+- `build-backend`: `FAIL: coverage 69.0% is below threshold 70%` (métrica: **statements** sobre `*service.go`)
+- `build-frontend`: `Coverage for lines (69.48%) does not meet global threshold (80%)` (métrica: **lines**)
+- Qué faltaba: tests de `GoalProgress` / `goals.js` → se agregaron en el mismo PR #22 y la corrida verde fue https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40001455038
+
+**PR de implementación** (suite + pipeline): https://github.com/mateopappa/ingsoft3-tp01/pull/21
 
 ### 10. Problemas encontrados y soluciones
 
