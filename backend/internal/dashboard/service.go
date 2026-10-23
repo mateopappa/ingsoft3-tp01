@@ -8,11 +8,19 @@ import (
 	"flow/internal/models"
 )
 
-type Service struct {
-	repo *Repository
+// MetricsStore is the persistence port for dashboard aggregates (injected for unit tests).
+type MetricsStore interface {
+	GetTodaySeconds(ctx context.Context, userID, todayDate string) (int, error)
+	GetWeekSeconds(ctx context.Context, userID, startDate, endDate string) (int, error)
+	GetCategoryDistribution(ctx context.Context, userID, startDate, endDate string) ([]models.CategoryDistribution, error)
+	GetDailyActivity(ctx context.Context, userID, startDate, endDate string) (map[string]int, error)
 }
 
-func NewService(repo *Repository) *Service {
+type Service struct {
+	repo MetricsStore
+}
+
+func NewService(repo MetricsStore) *Service {
 	return &Service{repo: repo}
 }
 

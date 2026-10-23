@@ -14,11 +14,22 @@ var (
 	ErrCategoryInUse       = errors.New("category cannot be deleted because it is referenced by existing activities")
 )
 
-type Service struct {
-	repo *Repository
+// CategoryStore is the persistence port for categories (injected for unit tests).
+type CategoryStore interface {
+	ListCategories(ctx context.Context, userID string) ([]models.Category, error)
+	GetCategoryByID(ctx context.Context, id, userID string) (*models.Category, error)
+	CreateCategory(ctx context.Context, userID, name, color string) (*models.Category, error)
+	UpdateCategory(ctx context.Context, id, userID, name, color string) (*models.Category, error)
+	DeleteCategory(ctx context.Context, id, userID string) error
+	CountActivitiesByCategoryID(ctx context.Context, categoryID, userID string) (int, error)
+	SeedDefaultCategories(ctx context.Context, userID string) error
 }
 
-func NewService(repo *Repository) *Service {
+type Service struct {
+	repo CategoryStore
+}
+
+func NewService(repo CategoryStore) *Service {
 	return &Service{repo: repo}
 }
 

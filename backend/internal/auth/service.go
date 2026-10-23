@@ -20,17 +20,27 @@ var (
 	ErrInvalidCredentials = errors.New("invalid email or password")
 )
 
+// CategorySeeder seeds default categories after registration.
 type CategorySeeder interface {
 	SeedDefaultCategories(ctx context.Context, userID string) error
 }
 
+// UserStore is the persistence port for users and sessions (injected for unit tests).
+type UserStore interface {
+	CreateUser(ctx context.Context, email, passwordHash string) (*models.User, error)
+	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+	CreateSession(ctx context.Context, sessionID, userID string, expiresAt time.Time) error
+	GetSession(ctx context.Context, sessionID string) (*models.Session, *models.User, error)
+	DeleteSession(ctx context.Context, sessionID string) error
+}
+
 type Service struct {
-	repo            *Repository
+	repo            UserStore
 	categorySeeder  CategorySeeder
 	sessionDuration time.Duration
 }
 
-func NewService(repo *Repository, categorySeeder CategorySeeder, sessionDuration time.Duration) *Service {
+func NewService(repo UserStore, categorySeeder CategorySeeder, sessionDuration time.Duration) *Service {
 	return &Service{
 		repo:            repo,
 		categorySeeder:  categorySeeder,

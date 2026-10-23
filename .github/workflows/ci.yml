@@ -30,6 +30,43 @@ jobs:
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
 
+      - name: Construir la etapa de tests del backend
+        uses: docker/build-push-action@v7
+        with:
+          context: ./backend
+          target: test
+          load: true
+          push: false
+          tags: backend-test:ci
+          cache-from: type=gha,scope=backend-test
+          cache-to: type=gha,mode=max,scope=backend-test
+
+      - name: Correr los tests con coverage (umbral 70%)
+        run: |
+          mkdir -p TestResults/backend
+          docker run --rm -v "${{ github.workspace }}/TestResults/backend:/out" backend-test:ci
+
+      - name: Resumen de coverage backend
+        if: ${{ !cancelled() }}
+        run: |
+          if [ -f TestResults/backend/SummaryGithub.md ]; then
+            cat TestResults/backend/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No backend coverage summary found" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Publicar coverage backend
+        uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: coverage-backend
+          path: |
+            TestResults/backend/coverage.html
+            TestResults/backend/coverage.txt
+            TestResults/backend/coverage.out
+            TestResults/backend/SummaryGithub.md
+
   build-frontend:
     runs-on: ubuntu-latest
     steps:
@@ -52,3 +89,39 @@ jobs:
           tags: frontend:ci
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
+
+      - name: Construir la etapa de tests del frontend
+        uses: docker/build-push-action@v7
+        with:
+          context: ./frontend
+          target: test
+          load: true
+          push: false
+          tags: frontend-test:ci
+          cache-from: type=gha,scope=frontend-test
+          cache-to: type=gha,mode=max,scope=frontend-test
+
+      - name: Correr los tests con coverage (umbrales vitest)
+        run: |
+          mkdir -p TestResults/frontend
+          docker run --rm -v "${{ github.workspace }}/TestResults/frontend:/out" frontend-test:ci
+
+      - name: Resumen de coverage frontend
+        if: ${{ !cancelled() }}
+        run: |
+          if [ -f TestResults/frontend/SummaryGithub.md ]; then
+            cat TestResults/frontend/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No frontend coverage summary found" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Publicar coverage frontend
+        uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: coverage-frontend
+          path: |
+            TestResults/frontend/coverage
+            TestResults/frontend/coverage-summary.json
+            TestResults/frontend/SummaryGithub.md

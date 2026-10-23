@@ -6,23 +6,37 @@ import (
 	"strings"
 	"time"
 
-	"flow/internal/categories"
 	"flow/internal/models"
 )
 
 var (
-	ErrInvalidDuration    = errors.New("duration must be greater than zero seconds")
-	ErrEmptyDescription   = errors.New("description cannot be empty")
-	ErrInvalidDate        = errors.New("activity date must be in YYYY-MM-DD format")
-	ErrInvalidCategory    = errors.New("category does not exist or does not belong to you")
+	ErrInvalidDuration  = errors.New("duration must be greater than zero seconds")
+	ErrEmptyDescription = errors.New("description cannot be empty")
+	ErrInvalidDate      = errors.New("activity date must be in YYYY-MM-DD format")
+	ErrInvalidCategory  = errors.New("category does not exist or does not belong to you")
 )
 
-type Service struct {
-	repo        *Repository
-	categorySvc *categories.Service
+// ActivityStore is the persistence port for activities (injected for unit tests).
+type ActivityStore interface {
+	CreateActivity(ctx context.Context, a *models.Activity) (*models.Activity, error)
+	GetActivityByID(ctx context.Context, id, userID string) (*models.Activity, error)
+	UpdateActivity(ctx context.Context, a *models.Activity) (*models.Activity, error)
+	DeleteActivity(ctx context.Context, id, userID string) error
+	ToggleFavorite(ctx context.Context, id, userID string, favorite bool) error
+	ListActivities(ctx context.Context, userID string, filter models.ActivityFilter) ([]models.Activity, error)
 }
 
-func NewService(repo *Repository, categorySvc *categories.Service) *Service {
+// CategoryFinder validates that a category exists and belongs to the user.
+type CategoryFinder interface {
+	GetCategoryByID(ctx context.Context, id, userID string) (*models.Category, error)
+}
+
+type Service struct {
+	repo        ActivityStore
+	categorySvc CategoryFinder
+}
+
+func NewService(repo ActivityStore, categorySvc CategoryFinder) *Service {
 	return &Service{
 		repo:        repo,
 		categorySvc: categorySvc,

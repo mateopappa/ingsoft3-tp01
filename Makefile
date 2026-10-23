@@ -17,6 +17,17 @@ build:
 test:
 	cd backend && go test -v -race ./...
 
+# Backend coverage gate (same script the CI container runs)
+test-coverage-backend:
+	cd backend && OUT_DIR=../TestResults/backend COVERAGE_THRESHOLD=70 ./scripts/check-coverage.sh
+
+# Frontend unit tests + coverage thresholds
+test-coverage-frontend:
+	cd frontend && npm run test:coverage
+
+# Both sides
+test-coverage: test-coverage-backend test-coverage-frontend
+
 # Run database migrations manually
 migrate:
 	cd backend && go run cmd/server/main.go -migrate

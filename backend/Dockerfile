@@ -7,7 +7,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy source code and migrations
+# Copy source code, migrations and coverage gate script
 COPY . .
 
 # Build static executable stripped of symbols
@@ -16,7 +16,15 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -o /app/server \
     cmd/server/main.go
 
-# ---- Stage 2: Runtime (Minimal) ----
+# ---- Stage 2: tests (reuses SDK + sources from build) ----
+FROM build AS test
+# Threshold is statement coverage on *service.go (business logic).
+# Go has no native branch coverage — documented in decisiones.md.
+ENV COVERAGE_THRESHOLD=70
+ENV OUT_DIR=/out
+ENTRYPOINT ["/bin/sh", "/app/scripts/check-coverage.sh"]
+
+# ---- Stage 3: Runtime (Minimal) ----
 FROM alpine:3.20 AS final
 
 WORKDIR /app
