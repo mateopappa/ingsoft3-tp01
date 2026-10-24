@@ -158,7 +158,9 @@ jobs:
   deploy-qa:
     runs-on: ubuntu-latest
     needs: [build-backend, build-frontend]
-    if: github.ref == 'refs/heads/main'
+    # Solo cuando YA están las URLs de Render (variables de repo). Sin eso el publish
+    # a GHCR sigue siendo la entrega parcial; el deploy no ensucia main en rojo.
+    if: github.ref == 'refs/heads/main' && vars.QA_API_URL != '' && vars.QA_FRONT_URL != ''
     environment: qa
     steps:
       - name: Disparar deploy en Render (backend + front) — del commit verificado
@@ -208,6 +210,7 @@ jobs:
   deploy-prod:
     runs-on: ubuntu-latest
     needs: deploy-qa
+    if: vars.PROD_API_URL != '' && vars.PROD_FRONT_URL != ''
     environment: production
     steps:
       - name: Disparar deploy en Render (backend + front) — del commit aprobado
