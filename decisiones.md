@@ -4,14 +4,14 @@
 
 | Qué | URL |
 |---|---|
-| Paquete público backend (GHCR) | `ghcr.io/mateopappa/ingsoft3-tp01-backend` — etiqueta `sha-<commit-del-merge>` |
-| Paquete público frontend (GHCR) | `ghcr.io/mateopappa/ingsoft3-tp01-frontend` — etiqueta `sha-<commit-del-merge>` |
-| Cadena 1 — PR con tests verdes y «Entrar al registry» **salteado** | _(pegar corrida del PR de implementación TP6)_ |
-| Cadena 2 — corrida de `main` con «Construir y publicar» **último** paso propio | _(pegar corrida de push a main)_ |
-| URL QA (front) | _(https://…-front-qa.onrender.com)_ |
-| URL QA (api) | _(https://…-api-qa.onrender.com)_ |
-| URL PROD (front) | _(https://…-front-prod.onrender.com)_ |
-| URL PROD (api) | _(https://…-api-prod.onrender.com)_ |
+| Paquete público backend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-backend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-backend:sha-596edde63b87b10552d01d59956ebcc343d2a814` |
+| Paquete público frontend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-frontend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-frontend:sha-596edde63b87b10552d01d59956ebcc343d2a814` |
+| Cadena 1 — PR con tests verdes y «Entrar al registry» **salteado** | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40088873425 (job `build-backend`: Entrar al registry = skipped) |
+| Cadena 2 — corrida de `main` con publish **después** de los tests | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40089010802 (último paso propio: Construir y publicar; Entrar al registry en verde) |
+| URL QA (front) | _(pendiente Render)_ |
+| URL QA (api) | _(pendiente Render)_ |
+| URL PROD (front) | _(pendiente Render)_ |
+| URL PROD (api) | _(pendiente Render)_ |
 
 **Checklist de cableado (una vez, en tu cuenta):** ver § TP6 → «Setup manual pendiente».
 
