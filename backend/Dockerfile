@@ -10,9 +10,12 @@ RUN go mod download
 # Copy source code, migrations and coverage gate script
 COPY . .
 
+# GIT_COMMIT is injected by CI (or compose) so /api/health can report which SHA is running.
+ARG GIT_COMMIT=unknown
+
 # Build static executable stripped of symbols
 RUN CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-s -w" \
+    -ldflags="-s -w -X flow/internal/version.Commit=${GIT_COMMIT}" \
     -o /app/server \
     cmd/server/main.go
 

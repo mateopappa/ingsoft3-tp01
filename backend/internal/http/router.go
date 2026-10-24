@@ -1,9 +1,12 @@
 package http
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"io/fs"
 	"net/http"
+	"time"
 
 	"flow/internal/activities"
 	"flow/internal/auth"
@@ -11,29 +14,47 @@ import (
 	"flow/internal/dashboard"
 	"flow/internal/http/middleware"
 	"flow/internal/timer"
+	"flow/internal/version"
 )
 
 type RouterConfig struct {
-	AuthHandler       *auth.Handler
-	AuthService       *auth.Service
-	CategoryHandler   *categories.Handler
-	ActivityHandler   *activities.Handler
-	TimerHandler      *timer.Handler
-	DashboardHandler  *dashboard.Handler
-	WebFS             fs.FS
+	AuthHandler      *auth.Handler
+	AuthService      *auth.Service
+	CategoryHandler  *categories.Handler
+	ActivityHandler  *activities.Handler
+	TimerHandler     *timer.Handler
+	DashboardHandler *dashboard.Handler
+	DB               *sql.DB
+	WebFS            fs.FS
 }
 
 // NewRouter sets up the application routes, middleware, and static asset handlers.
 func NewRouter(cfg RouterConfig) http.Handler {
 	mux := http.NewServeMux()
 
-	// 1. Healthcheck
+	// 1. Healthcheck — pings the DB so smoke tests catch a bad connection string,
+	// and reports the baked-in commit so a deploy can be verified against github.sha.
 	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
+
+		dbStatus := "skipped"
+		statusCode := http.StatusOK
+		if cfg.DB != nil {
+			ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+			defer cancel()
+			if err := cfg.DB.PingContext(ctx); err != nil {
+				dbStatus = "disconnected"
+				statusCode = http.StatusServiceUnavailable
+			} else {
+				dbStatus = "connected"
+			}
+		}
+
+		w.WriteHeader(statusCode)
 		_ = json.NewEncoder(w).Encode(map[string]string{
-			"status":   "healthy",
-			"database": "connected",
+			"status":   map[bool]string{true: "healthy", false: "unhealthy"}[statusCode == http.StatusOK],
+			"database": dbStatus,
+			"commit":   version.Commit,
 		})
 	})
 

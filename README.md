@@ -38,6 +38,6 @@ docker compose up -d --build
 
 ## 📚 Documentación de Trabajos Prácticos
 
-- [decisiones.md](decisiones.md): Registro acumulativo de decisiones técnicas y justificaciones de arquitectura (TP1 a TP4).
+- [decisiones.md](decisiones.md): Registro acumulativo de decisiones (TP1–TP6). Arriba del todo: **Enlaces de este TP** (paquetes GHCR, cadena CI→registry, URLs QA/PROD).
 - [defensa-oral.md](defensa-oral.md): Ayudamemoria y preguntas clave para la defensa oral del coloquio.
 - [evidencias.md](evidencias.md): Registro fotográfico y comandos de verificación de TPs previos.

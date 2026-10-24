@@ -98,6 +98,7 @@ func main() {
 		ActivityHandler:  activitiesHandler,
 		TimerHandler:     timerHandler,
 		DashboardHandler: dashboardHandler,
+		DB:               db,
 		WebFS:            web.FS,
 	})
 

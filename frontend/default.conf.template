@@ -9,21 +9,23 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
-    # Docker internal DNS resolver
-    resolver 127.0.0.11 valid=10s ipv6=off;
-    set $backend_api http://backend:8080;
+    # BACKEND_URL and DNS_RESOLVER come from the environment at container start.
+    # Compose defaults: http://backend:8080 + Docker DNS.
+    # Render: https://…-api-qa.onrender.com + 8.8.8.8 (same image, different env).
+    resolver ${DNS_RESOLVER} valid=10s ipv6=off;
+    set $backend_api ${BACKEND_URL};
 
-    # Reverse proxy for REST API
     location /api/ {
         proxy_pass $backend_api;
+        proxy_ssl_server_name on;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Health check proxy
     location /health {
         proxy_pass $backend_api/api/health;
+        proxy_ssl_server_name on;
     }
 }
