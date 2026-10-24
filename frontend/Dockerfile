@@ -18,9 +18,18 @@ ENTRYPOINT ["/bin/sh", "/app/scripts/run-tests.sh"]
 # ---- Stage 3: production nginx image (no node, no tests) ----
 FROM nginx:alpine AS final
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Template is processed by the official nginx entrypoint: ${VAR} → env value.
+COPY default.conf.template /etc/nginx/templates/default.conf.template
 
 # Static SPA — node_modules/coverage excluded via .dockerignore
-COPY . /usr/share/nginx/html
+COPY index.html /usr/share/nginx/html/index.html
+COPY css /usr/share/nginx/html/css
+COPY static /usr/share/nginx/html/static
+COPY js /usr/share/nginx/html/js
+
+# Defaults match docker-compose (service name + Docker DNS).
+# Render overrides these with the API URL of THAT environment.
+ENV BACKEND_URL=http://backend:8080 \
+    DNS_RESOLVER=127.0.0.11
 
 EXPOSE 80

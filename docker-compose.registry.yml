@@ -28,7 +28,9 @@ services:
 
   frontend:
     image: ghcr.io/mateopappa/flow-frontend:v2.0.0
-
+    environment:
+      BACKEND_URL: http://backend:8080
+      DNS_RESOLVER: 127.0.0.11
     ports:
       - "3000:80"
     depends_on:

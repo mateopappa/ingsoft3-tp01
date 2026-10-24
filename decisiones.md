@@ -1,3 +1,22 @@
+# Enlaces de este TP (TP6 — CD)
+
+> Completar / actualizar tras el primer deploy real a Render. Quien corrige navega desde acá.
+
+| Qué | URL |
+|---|---|
+| Paquete público backend (GHCR) | `ghcr.io/mateopappa/ingsoft3-tp01-backend` — etiqueta `sha-<commit-del-merge>` |
+| Paquete público frontend (GHCR) | `ghcr.io/mateopappa/ingsoft3-tp01-frontend` — etiqueta `sha-<commit-del-merge>` |
+| Cadena 1 — PR con tests verdes y «Entrar al registry» **salteado** | _(pegar corrida del PR de implementación TP6)_ |
+| Cadena 2 — corrida de `main` con «Construir y publicar» **último** paso propio | _(pegar corrida de push a main)_ |
+| URL QA (front) | _(https://…-front-qa.onrender.com)_ |
+| URL QA (api) | _(https://…-api-qa.onrender.com)_ |
+| URL PROD (front) | _(https://…-front-prod.onrender.com)_ |
+| URL PROD (api) | _(https://…-api-prod.onrender.com)_ |
+
+**Checklist de cableado (una vez, en tu cuenta):** ver § TP6 → «Setup manual pendiente».
+
+---
+
 # Decisiones — TP1
 
 ## 1. Por qué Git no pudo resolver el conflicto solo
@@ -290,6 +309,99 @@ Este TP se completó con asistencia del agente de IA **Cursor (Auto/Composer)**.
 
 Si un test fue sugerido por IA y no puedo decir qué caso **no** cubre, no cuenta como entregado: por eso el camino sin cubrir de `activityDate` quedó explícito arriba.
 
+---
+
+## TP6 — CD: environments, aprobaciones y deployment patterns
+
+### 0. Setup manual pendiente (bloquea URLs vivas / approve / rechazo)
+
+Este agente **no puede** crear cuentas en Render/Neon ni environments/secrets en GitHub (403). El código del pipeline ya está; falta cablear en tu usuario `mateopappa`:
+
+1. **Neon** — proyecto con databases `app_qa` y `app_prod`. Copiá `DATABASE_URL` de cada una (URI `postgres://…`). Flow usa `DATABASE_URL` + `AUTO_MIGRATE=true` (las tablas se crean al primer arranque).
+2. **Render** — 4 Web Services Docker, Auto-Deploy **OFF**:
+   - `flow-api-qa` / `flow-api-prod` — Root Directory `backend`; env: `DATABASE_URL`, `SESSION_SECRET`, `AUTO_MIGRATE=true`, `COOKIE_SECURE=true`, `APP_ENV=qa|production`
+   - `flow-front-qa` / `flow-front-prod` — Root Directory `frontend`; env: `BACKEND_URL=https://<api-de-ESE-entorno>` (sin `/` final), `DNS_RESOLVER=8.8.8.8`
+3. **GitHub Environments**
+   - `qa` (sin reviewers) + secrets `RENDER_HOOK_API_QA`, `RENDER_HOOK_FRONT_QA`
+   - `production` + **Required reviewers** = vos; *Prevent self-review* **OFF** + secrets `RENDER_HOOK_API_PROD`, `RENDER_HOOK_FRONT_PROD`
+4. **Variables de repo** (Settings → Actions → Variables): `QA_API_URL`, `QA_FRONT_URL`, `PROD_API_URL`, `PROD_FRONT_URL`
+5. Tras el primer push a `main` que publique: hacer **públicos** los dos packages en GHCR; `docker logout ghcr.io` y `docker pull …:sha-<commit>`
+6. Flujo: merge → deploy-qa automático → Waiting for review en prod → **rechazar una vez** con motivo propio → aprobar otra → tag `v6.0.0` en el SHA de PROD + release
+7. Rollback cronometrado: redeploy del SHA de `v6.0.0` vía hook; anotar minutos desde *Deploys → live*
+
+### 1. Artefacto: por qué sólo se publica con verificación verde
+
+La imagen sale del **mismo job** que corrió los tests, y el paso «Construir y publicar» es el **último**. Si el `docker run` de tests falla, el job muere y nunca se llega a `docker/login` ni al push. Además: sólo `push` a `main` publica (`push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}`). Cadena de tres eslabones: (1) nada entra a main sin CI+coverage, (2) sólo main publica, (3) publicar es lo último del job que testeó.
+
+Si se publicara con tests en rojo, el registry dejaría de significar «esto pasó la verificación» y pasaría a ser un depósito de builds cualquiera.
+
+### 2. Continuous Delivery (no Deployment)
+
+Implementamos **Continuous Delivery**: QA automático tras merge; PROD con aprobación humana (`environment: production` + required reviewer). Continuous Deployment sacaría al humano: hoy no tenemos monitoreo/alertas suficientes para eso. El contexto de la materia (un desarrollador, free tier, demos) pide el gate de negocio.
+
+### 3. Diseño de la cadena y alcance de secrets
+
+```
+build-backend ∥ build-frontend  →  deploy-qa (environment: qa)  →  deploy-prod (environment: production)
+```
+
+- `needs` + `if: github.ref == 'refs/heads/main'` en `deploy-qa`: los PRs verifican y no despliegan.
+- `deploy-prod` no repite el `if`: hereda la compuerta porque `needs: deploy-qa`.
+- Secrets de hooks viven **en el environment** (`--env qa` / `--env production`): un job de QA no puede leer los hooks de PROD.
+- URLs públicas van en **variables** de repo (`vars.*`), no en secrets: no son secretas y el smoke las necesita.
+
+### 4. Qué mira el aprobador antes de aprobar
+
+1. ¿`deploy-qa` verde y smoke OK en esa corrida?
+2. ¿El commit del run es el que quiero (no otro merge que se coló)?
+3. ¿El cambio es seguro para usuarios reales ahora (timing de demo/defensa)?
+4. ¿Hay migraciones destructivas? (rollback de código no deshace schema)
+
+Motivo de rechazo (ejemplo a personalizar en la corrida real): *«Smoke de QA pasó contra cold-start de la versión anterior; espero a que Render marque live el SHA de esta corrida antes de promover.»*
+
+### 5. Free tier (letra chica)
+
+- **Render free**: sleep tras idle → cold start; builds lentos. El smoke reintenta 30×20s.
+- **Neon free**: permanente (a diferencia del Postgres de Render, que expira ~30 días) — por eso Neon.
+- **GHCR**: paquetes públicos sin credenciales para quien corrige.
+
+### 6. Garantía que se pierde porque Render reconstruye
+
+En TP6 el hook pide a Render **rebuild desde el repo** del `&ref=$GITHUB_SHA`. Promovemos el **mismo commit**, no la **misma imagen** que el job publicó en GHCR. Puede diferir (base image, dependencia flotante). El TP7 cierra eso desplegando la imagen del registry.
+
+### 7. Qué prueba el smoke (y qué no)
+
+Prueba: proceso vivo (`/api/health`), BD alcanzable (`database: connected`), front sirve HTML y proxy `/health`. **No** prueba: que el commit sea el esperado (mitigación opcional: comparar `commit` del JSON con `github.sha` — el campo ya existe en health), ni flujos autenticados, ni que no quede sirviendo la versión anterior mientras Render buildea.
+
+### 8. Config fuera de la imagen (frontend)
+
+| En la imagen | Por variable de entorno |
+|---|---|
+| HTML/JS/CSS estáticos | `BACKEND_URL`, `DNS_RESOLVER` (plantilla nginx) |
+| Binario Go + migraciones embebidas | `DATABASE_URL`, `SESSION_SECRET`, `APP_ENV`, `COOKIE_SECURE`, `AUTO_MIGRATE` |
+
+Misma imagen de front sirve QA y PROD; sólo cambian las env del servicio Render.
+
+### 9. Deployment pattern elegido + rollback
+
+Para Flow en producción real con usuarios: **rolling** (o recrear instancia única en free tier) + **feature flags** para cambios de UX. Blue-green pide dos slots; canary pide métricas/tráfico partido que hoy no tenemos.
+
+**Plan de rollback actual (medido tras el primer PROD):**
+1. Leer SHA bueno: `gh api 'repos/mateopappa/ingsoft3-tp01/deployments?environment=production' --jq '.[0].sha'` o el de `v6.0.0`.
+2. `curl` a los Deploy Hooks de PROD con `&ref=$SHA_ANTERIOR`.
+3. Esperar *Deploys → live* en api y front; anotar minutos.
+4. Verificar `/api/health` y el front.
+5. Limitación: migraciones destructivas **no** se revierten con esto.
+
+### 10. Fallback local
+
+Quedan `compose.qa.yml` / `compose.prod.yml` (`name:` distintos, puertos 8080/3000 vs 8081/3001, volúmenes `db_data_qa`/`db_data_prod`) por si el free tier de Render falla. El plan C exige self-hosted runner y que Actions dispare el `compose up` — no levantarlo a mano.
+
+### 11. Problemas / IA
+
+- Token del agente sin permiso para crear environments/secrets → setup documentado para el dueño del repo.
+- Health antes mentía `database: connected` sin pingear → ahora hace `PingContext` real.
+- IA (Cursor): workflow, plantilla nginx, compose de fallback y esta sección. Verificación: orden de pasos en `ci.yml`, tests Go, y tras el cableado manual las corridas de Actions/Deployments.
 
 
 

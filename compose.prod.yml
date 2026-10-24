@@ -1,0 +1,46 @@
+# Fallback local PROD environment (TP6 §3.6). Isolated Compose project.
+name: prod
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: app
+    volumes:
+      - db_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-local}
+    environment:
+      DATABASE_URL: "postgres://postgres:${DB_PASSWORD}@db:5432/app?sslmode=disable"
+      APP_PORT: "8080"
+      APP_ENV: "production"
+      SESSION_SECRET: "${SESSION_SECRET:-flow_prod_session_secret_change_me_1234567890}"
+      COOKIE_SECURE: "false"
+      AUTO_MIGRATE: "true"
+    ports:
+      - "8081:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    environment:
+      BACKEND_URL: http://backend:8080
+      DNS_RESOLVER: 127.0.0.11
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data_prod:
