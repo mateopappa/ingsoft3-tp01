@@ -24,3 +24,9 @@ defensa-oral.md
 **/defensa-oral.md
 defensa-*.md
 
+# Playwright (TP7) — reportes locales, no se versionan
+playwright-report/
+test-results/
+frontend/playwright-report/
+frontend/test-results/
+

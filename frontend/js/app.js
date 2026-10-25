@@ -93,6 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.textContent = message;
+        if (type === 'error') {
+            toast.setAttribute('role', 'alert');
+        }
         container.appendChild(toast);
         setTimeout(() => {
             toast.remove();
@@ -579,6 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
             delBtn.className = 'btn-icon';
             delBtn.innerHTML = '🗑️';
             delBtn.title = 'Delete activity';
+            delBtn.setAttribute('aria-label', `Delete ${act.description}`);
             delBtn.addEventListener('click', () => deleteActivity(act.id));
 
             actionWrap.appendChild(editBtn);
