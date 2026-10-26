@@ -1,3 +1,18 @@
+# Enlaces del TP9 — DevSecOps
+
+| Qué | URL |
+|---|---|
+| Dependabot config | https://github.com/mateopappa/ingsoft3-tp01/blob/main/.github/dependabot.yml |
+| Sentry Browser (front DSN en código) | proyecto `4512325842436096` · `frontend/static/js/lib/sentry.js` |
+| Sentry Go (DSN solo en Render `SENTRY_DSN`) | proyecto `4512325837062145` · PROD api env |
+| Health PROD (monitor) | https://flow-api-prod-4q78.onrender.com/api/health |
+| Demo fault | `ENABLE_DEMO_FAULT=true` → `GET /api/falla` (apagar después) |
+| Release `v9.0.0` | https://github.com/mateopappa/ingsoft3-tp01/releases/tag/v9.0.0 |
+
+**TP9:** Dependabot + Sentry + HEAD health en main; DSN Go cablear en Render PROD.
+
+---
+
 # Enlaces del TP8 — IaC (preprod)
 
 | Qué | URL |
@@ -564,4 +579,47 @@ Se agregó `role="alert"` en toasts de error, `aria-label="Delete …"` en cada 
 
 Asistido por **Cursor (Composer)**. Verificación: `terraform fmt`, `init -backend=false`, `validate` en verde; providers fijados; `.gitignore` cubre estado/tfvars **antes** de cualquier apply; ninguna clave en el HCL; `DATABASE_URL` y `BACKEND_URL` se derivan de recursos.
 
+## TP9 — DevSecOps + Observabilidad + Continuous Feedback
 
+### Qué quedó prendido en la cuenta (2026-10-27)
+
+| Pieza | Estado |
+|---|---|
+| Secret scanning + push protection | Enabled en el repo público |
+| Dependabot alerts | ON |
+| Dependabot security updates | ON (PRs abiertos, p.ej. `golang.org/x/crypto`) |
+| CodeQL default | Configurado (go, javascript, actions) |
+| `HEAD /api/health` | PROD y QA responden **200** a `curl -I` |
+
+### Código
+
+| Pieza | Qué hace |
+|---|---|
+| Dependabot | `.github/dependabot.yml` — gomod `/backend`, npm `/frontend`, github-actions `/` |
+| Sentry back | `SENTRY_DSN` por env; vacío = apagado. `Recoverer` reporta panics al hub |
+| Sentry front | `frontend/static/js/lib/sentry.js` + `frontend/js/lib/sentry.js` — DSN Browser `4512325842436096` |
+| Falla demo | `ENABLE_DEMO_FAULT=true` → `GET /api/falla` → Sentry + 500; apagar después |
+| Go | `go 1.25` + `sentry-go` |
+
+### Cierre / evidencia
+
+1. Merge TP9 → redeploy QA/PROD.
+2. Merge ≥1 Dependabot verde (#35 o #37; no #34 en rojo).
+3. Render PROD api: `SENTRY_DSN` = DSN del proyecto Go `4512325837062145` (no va en el repo).
+4. `ENABLE_DEMO_FAULT=true` → `GET /api/falla` → evento en Sentry → flag off.
+5. UptimeRobot en `https://flow-api-prod-4q78.onrender.com/api/health` → anotar DOWN/UP → pausar.
+6. Tarjeta TP3 con un número medido.
+7. Release `v9.0.0`.
+
+| Campo | Valor |
+|---|---|
+| PR Dependabot mergeado | _(URL)_ |
+| Tiempo hasta alerta DOWN | _(min)_ |
+| Operación más usada (TPM) | _(Sentry)_ |
+| Operación más lenta (P95) | _(Sentry)_ |
+
+### Problemas / IA
+
+- Front sin bundler: Sentry vía CDN ESM.
+- DSN front en código a propósito (sólo envía).
+- IA (Cursor): Dependabot, Sentry, HEAD, esta sección. Verificación: CodeQL/Dependabot ON, `curl -I` 200, `go test` middleware.
