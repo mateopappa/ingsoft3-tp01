@@ -1,4 +1,5 @@
-# Fallback local QA environment (TP6 §3.6). Isolated Compose project.
+# Fallback local QA environment (TP6 §3.6 / TP7 §3.6). Isolated Compose project.
+# Ejecuta las imágenes del registry (no build local): IMAGE_TAG=sha-<commit>
 name: qa
 
 services:
@@ -15,10 +16,8 @@ services:
       retries: 10
 
   backend:
-    build:
-      context: ./backend
-      args:
-        GIT_COMMIT: ${GIT_COMMIT:-local}
+    image: ghcr.io/mateopappa/ingsoft3-tp01-backend:${IMAGE_TAG:?falta IMAGE_TAG}
+    platform: linux/amd64
     environment:
       DATABASE_URL: "postgres://postgres:${DB_PASSWORD}@db:5432/app?sslmode=disable"
       APP_PORT: "8080"
@@ -33,7 +32,8 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    image: ghcr.io/mateopappa/ingsoft3-tp01-frontend:${IMAGE_TAG:?falta IMAGE_TAG}
+    platform: linux/amd64
     environment:
       BACKEND_URL: http://backend:8080
       DNS_RESOLVER: 127.0.0.11
