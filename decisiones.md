@@ -337,7 +337,7 @@ Si un test fue sugerido por IA y no puedo decir qué caso **no** cubre, no cuent
 
 ### 0. Setup manual pendiente (bloquea URLs vivas / approve / rechazo)
 
-Pipeline + GHCR ya están en `main`. GitHub Environments: **`qa`** (sin reviewers) y **`production`** (required reviewer = `mateopappa`, *Prevent self-review* OFF) ya existen. Faltan Neon + 4 servicios Render image-backed + hooks/vars.
+Pipeline + GHCR ya están en `main`. GitHub Environments: **`qa`** (sin reviewers) y **`production`** (required reviewer = `mateopappa`, *Prevent self-review* OFF) ya existen. Neon (`app_qa`/`app_prod`) y los 4 servicios Render image-backed ya están vivos (URLs arriba). Falta cablear **vars** `QA_*`/`PROD_*_URL` + **Deploy Hooks** en secrets de environment (`./scripts/tp6-finish-github.sh`), luego rechazo/approve y `v6.0.0`.
 
 **Camino preferido (dueño del repo):** mergear/usar [`scripts/tp6-wire.sh`](scripts/tp6-wire.sh) (PR #30):
 
