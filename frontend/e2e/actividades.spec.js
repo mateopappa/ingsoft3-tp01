@@ -15,11 +15,18 @@ async function registerFreshUser(page) {
 async function createActivityViaUI(page, { description, hours, minutes }) {
   await page.getByRole('button', { name: '+ Log Activity Manually' }).click()
   const modal = page.locator('#activity-modal')
+  const category = modal.getByLabel('Category *')
   await expect(modal.getByLabel('Description *')).toBeVisible()
   await modal.getByLabel('Description *').fill(description)
-  await modal.getByLabel('Category *').selectOption({ label: 'Work' })
+  // Prefer value (UUID): selecting by label can race with a categories re-render.
+  const workValue = await category.locator('option', { hasText: /^Work$/ }).getAttribute('value')
+  expect(workValue).toBeTruthy()
+  await category.selectOption(workValue)
+  await expect(category).toHaveValue(workValue)
   await modal.getByLabel('Hours').fill(String(hours))
   await modal.getByLabel('Minutes').fill(String(minutes))
+  // Re-assert right before submit (late loadCategories used to wipe the selection).
+  await category.selectOption(workValue)
 
   const post = page.waitForResponse(
     (res) => res.url().includes('/api/activities') && res.request().method() === 'POST',
