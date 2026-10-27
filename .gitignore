@@ -13,6 +13,10 @@ backend/server
 .env
 *.local
 
+# TP6 wire script output (URLs + ids locales)
+scripts/tp6-wire.out.env
+*.out.env
+
 # Terraform (TP8) — estado y tfvars locales tienen secretos; el lock SÍ se versiona
 *.tfstate
 *.tfstate.*
@@ -42,3 +46,4 @@ test-results/
 frontend/playwright-report/
 frontend/test-results/
 
+scripts/tp6-wire.secrets.env
