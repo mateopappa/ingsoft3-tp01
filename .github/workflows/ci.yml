@@ -279,9 +279,8 @@ jobs:
 
   deploy-prod:
     runs-on: ubuntu-latest
-    # TP6: gate humano en environment production. e2e (TP7) sigue corriendo en paralelo
-    # tras integracion, pero no bloquea el approve/reject de PROD.
-    needs: integracion
+    # TP7: gate = e2e verde + aprobación humana en environment production.
+    needs: e2e
     if: vars.PROD_API_URL != '' && vars.PROD_FRONT_URL != ''
     environment: production
     concurrency:
