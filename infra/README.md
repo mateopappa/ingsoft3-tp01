@@ -46,8 +46,7 @@ curl -fsS "$(terraform output -raw front_url)/api/health"
 terraform destroy
 ```
 
-The default `image_tag` is `sha-e810b299b20b96f6ae2d3f99d1c762ea0c49fb18`.
-That image is the last main publish whose front still says `Save Activity` and whose nginx sends `Host $proxy_host`.
+The default `image_tag` is `sha-b468ca1da77ef75dc407513b40b9d1b143d820d9` (release `v7.0.0`).
 
 State lives locally as `terraform.tfstate` (gitignored). Never commit it.
 

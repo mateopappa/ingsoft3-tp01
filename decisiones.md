@@ -1,3 +1,17 @@
+# Enlaces del TP8 — IaC (preprod)
+
+| Qué | URL |
+|---|---|
+| Código Terraform (`infra/`) | https://github.com/mateopappa/ingsoft3-tp01/tree/main/infra |
+| Workflow `infra.yml` (fmt/validate/plan) | https://github.com/mateopappa/ingsoft3-tp01/actions/workflows/infra.yml |
+| Imagen default preprod | `ghcr.io/mateopappa/ingsoft3-tp01-{backend,frontend}:sha-b468ca1da77ef75dc407513b40b9d1b143d820d9` (= `v7.0.0`) |
+| Ciclo apply→health→destroy | Documentado en § TP8 (26 oct 2026; preprod destruido a propósito hasta la defensa) |
+| Release `v8.0.0` | https://github.com/mateopappa/ingsoft3-tp01/releases/tag/v8.0.0 |
+
+**TP8 cerrado:** preprod solo vía Terraform; QA/PROD intocados; keys fuera del HCL.
+
+---
+
 # Enlaces del TP7
 
 > Completar tras el primer deploy **image-backed** + corrida con gate e2e. Quien corrige navega desde acá.
@@ -536,16 +550,15 @@ Se agregó `role="alert"` en toasts de error, `aria-label="Delete …"` en cada 
 - Cadena de conexión: URI `postgres://…` en `DATABASE_URL` (no `ConnectionStrings__Default`).
 - Front: `BACKEND_URL` = `trimsuffix(render_web_service.api.url, "/")` + `DNS_RESOLVER=8.8.8.8`.
 - API: `AUTO_MIGRATE=true`, `COOKIE_SECURE=true`, `APP_ENV=preprod`.
-- Imagen por defecto: `sha-e810b299b20b96f6ae2d3f99d1c762ea0c49fb18`. Tiene el fix de `Host $proxy_host` y el botón sigue diciendo `Save Activity`. `sha-596edde…` responde 508 en `/api`. El SHA del botón renombrado a `Save` (evidencia del TP7) no se usa acá.
+- Imagen por defecto: `sha-b468ca1…` (= release `v7.0.0` / PROD). `sha-596edde…` responde 508 en `/api`.
 
 ### Problemas / notas
 
-- Ciclo ya corrido el 26 oct 2026: `apply` creó Neon `flow-preprod` y los dos servicios, health con la base conectada, proxy del front en 200 y registro en 201; un segundo `plan` no tenía cambios; `destroy` bajó esos 6 recursos. QA, PROD y el proyecto Neon `flow` no se tocaron. Preprod queda destruido hasta la defensa, para poder hacer el `apply` en vivo y para no gastar las 750 h del free tier.
-- `RENDER_OWNER_ID` sale de `GET /v1/owners`. En esta cuenta es un id `tea-…`. El `usr-…` de la URL del dashboard Render lo rechaza.
-- Defensa, cuando el TP7 ya no esté desplegando QA: `set -a && source .env && set +a && cd infra && terraform init && terraform apply`, verificar `/api/health` del API y del front, y `terraform destroy`.
-- Tag `v8.0.0` sobre el merge de este ajuste, después del TP7. Crearlo ahora no redesplegaría (el workflow no corre en tags), pero el commit todavía no está en `main`.
-- Workflow `.github/workflows/infra.yml`: `fmt`+`validate` siempre; `plan` publica artefacto si hay secrets, si no deja nota. Las API keys quedan en `.env`, no en secrets del repo.
-- Free tier Render: no modificar servicios `free` in-place. Cambiar tag implica `destroy`/`apply` o `-replace`.
+- Ciclo ya corrido el 26 oct 2026: `apply` creó Neon `flow-preprod` y los dos servicios, health OK; `plan` idempotente; `destroy` de los 6 recursos. QA/PROD y Neon `flow` no se tocaron. Preprod destruido a propósito (cuota free + `apply` en vivo en la defensa).
+- `RENDER_OWNER_ID` = id de `GET /v1/owners` (`tea-…`); el `usr-…` del dashboard no sirve.
+- Defensa: `set -a && source .env && set +a && cd infra && terraform init && terraform apply` → health API/front → `terraform destroy`.
+- Workflow `.github/workflows/infra.yml`: `fmt`+`validate` siempre; `plan` opcional con secrets. Keys en `.env` local, no en el HCL.
+- Free tier: cambiar tag ⇒ `destroy`/`apply` o `-replace` (no update in-place).
 
 ### Declaración de uso de IA
 
