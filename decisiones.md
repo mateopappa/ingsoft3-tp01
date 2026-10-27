@@ -6,9 +6,9 @@
 |---|---|
 | Paquete público backend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-backend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-backend:sha-<commit-de-PROD>` |
 | Paquete público frontend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-frontend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-frontend:sha-<commit-de-PROD>` |
-| Corrida **integración VERDE + e2e ROJA** (commit que rompió el front) | _(pegar Actions run + SHA del commit de rotura)_ |
-| Artefacto `playwright-report-integracion` (verde) | _(de esa misma corrida)_ |
-| Artefacto `playwright-report-e2e` (rojo) | _(de esa misma corrida)_ |
+| Corrida **integración VERDE + e2e ROJA** (commit que rompió el front) | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40438437478 · SHA `308bd23` (`Save Activity`→`Save`; e2e timeout buscando el botón; `deploy-prod` skipped) |
+| Artefacto `playwright-report-integracion` (verde) | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40438437478#artifacts |
+| Artefacto `playwright-report-e2e` (rojo) | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40438437478#artifacts |
 | Corrida completa verde posterior → PROD | _(pegar Actions run hasta deploy-prod)_ |
 | URL QA (front) | https://flow-front-qa.onrender.com |
 | URL QA (api) | https://flow-api-qa-hzmk.onrender.com |
