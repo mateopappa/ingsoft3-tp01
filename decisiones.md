@@ -1,4 +1,26 @@
-# Enlaces de este TP (TP6 — CD)
+# Enlaces del TP7
+
+> Completar tras el primer deploy **image-backed** + corrida con gate e2e. Quien corrige navega desde acá.
+
+| Qué | URL |
+|---|---|
+| Paquete público backend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-backend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-backend:sha-<commit-de-PROD>` |
+| Paquete público frontend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-frontend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-frontend:sha-<commit-de-PROD>` |
+| Corrida **integración VERDE + e2e ROJA** (commit que rompió el front) | _(pegar Actions run + SHA del commit de rotura)_ |
+| Artefacto `playwright-report-integracion` (verde) | _(de esa misma corrida)_ |
+| Artefacto `playwright-report-e2e` (rojo) | _(de esa misma corrida)_ |
+| Corrida completa verde posterior → PROD | _(pegar Actions run hasta deploy-prod)_ |
+| URL QA (front) | _(pendiente Render image-backed)_ |
+| URL QA (api) | _(pendiente Render image-backed)_ |
+| URL PROD (front) | _(pendiente Render image-backed)_ |
+| URL PROD (api) | _(pendiente Render image-backed)_ |
+| Release `v7.0.0` | _(tag sobre el SHA de Deployments/production)_ |
+
+**Checklist TP7 (sobre el del TP6):** ver § TP7 → «Setup manual pendiente».
+
+---
+
+# Enlaces del TP6 — CD
 
 > Completar / actualizar tras el primer deploy real a Render. Quien corrige navega desde acá.
 
@@ -405,6 +427,105 @@ Quedan `compose.qa.yml` / `compose.prod.yml` (`name:` distintos, puertos 8080/30
 
 ---
 
+## TP7 — Contenedores en el pipeline + integración y e2e
+
+### 0. Setup manual pendiente (bloquea evidencia viva / gate rojo / v7.0.0)
+
+El código del TP7 está en el repo (`imgURL`, jobs `integracion`/`e2e`, Playwright, a11y, compose con `image:`). Falta cablear en la cuenta `mateopappa` (el agente no puede crear Render/Neon ni secrets/vars):
+
+1. Completar el checklist del TP6 (Neon + 4 servicios Render + environments + vars + packages públicos).
+2. **Cambiar la fuente** de los 4 servicios a *Existing Image* (no crear servicios nuevos si se puede evitar):
+   - api QA/PROD → `ghcr.io/mateopappa/ingsoft3-tp01-backend:sha-<40-chars-del-último-main>`
+   - front QA/PROD → `ghcr.io/mateopappa/ingsoft3-tp01-frontend:sha-<mismo>`
+   - Probar **un** servicio a mano con el hook + `imgURL` antes de los otros tres.
+3. Variables de entorno de cada servicio **no se tocan** (`DATABASE_URL`, `BACKEND_URL`, etc.): la misma imagen de front sirve QA y PROD.
+4. Tras merge a `main` con vars seteadas: cadena `build → deploy-qa (imgURL) → integracion → e2e → [aprobación] → deploy-prod (misma imgURL)`.
+5. Evidencia central: romper el **front** (p. ej. texto del botón `Save Activity` → `Save`) **sin tocar `e2e/`** → smoke verde + integración verde + e2e roja → `deploy-prod` no pide aprobación. Pegar links en «Enlaces del TP7».
+6. Fix → cadena verde → aprobar PROD → tag `v7.0.0` sobre el SHA de *Deployments* `production` (`gh release create v7.0.0 --verify-tag`).
+
+### 1. Build once, deploy many — qué problema del TP6 cierra
+
+En el TP6 el hook mandaba `&ref=$GITHUB_SHA`: Render **reconstruía** el repo en cada entorno. Ejemplo propio del escenario: QA y PROD pueden resolver una dependencia distinta en builds separados aunque el commit sea el mismo. Desde TP7 el pipeline publica `sha-<commit>` una sola vez en GHCR y los hooks mandan `imgURL=…:sha-<commit>`: QA y PROD **ejecutan el mismo binario**. Promover = repetir el mismo `imgURL`; rollback = el `imgURL` de un SHA anterior.
+
+### 2. Estrategia de etiquetas
+
+| Etiqueta | Dónde | Qué garantiza |
+|---|---|---|
+| `sha-<40-chars>` | GHCR (pipeline) | Identidad del artefacto de **esa** corrida de `main`. Es lo que se promueve. |
+| `v7.0.0` | git + GitHub Release | Nombre humano de «lo que anduvo en PROD». Apunta al commit de Deployments, no al tip de `main`. |
+
+**Por qué no `latest`:** es un puntero móvil; un deploy a `latest` podría ejecutar una imagen que nunca pasó las e2e. Con una sola etiqueta por imagen no hay forma de desplegar sin decir exactamente qué es.
+
+**Imagen en Settings de Render vs la que corre:** al pasar a *Existing Image* se pega el `sha-` del checkpoint (punto de partida). Cada deploy del pipeline manda otro tag vía `imgURL` **sin** actualizar Settings. *Manual Deploy* desde el panel volvería a la imagen vieja de Settings — por eso el deploy lo dispara siempre la corrida.
+
+### 3. Del tag de release a la imagen
+
+```bash
+git rev-list -n1 v7.0.0          # → commit
+# imagen: ghcr.io/mateopappa/ingsoft3-tp01-{backend,frontend}:sha-<ese-commit>
+```
+
+### 4. Cómo se comprueba que el entorno ejecuta TU imagen
+
+Desde afuera: en *Events* de cada servicio Render, el deploy dice «Triggered via Deploy Hook» y nombra `…:sha-<commit>` de esa corrida; la misma etiqueta está en los packages. El smoke **no** alcanza: sólo pregunta si responde; si el hook falló, el servicio sigue la versión anterior y el smoke puede dar verde igual (hueco conceptual del §2.4; no se cierra en este TP).
+
+### 5. Suites elegidas (Flow, no la app de la cátedra)
+
+**Integración** (`e2e/api.spec.js`, fixture `request`, sin browser, `API_BASE_URL`):
+1. Alta + GET encuentra + DELETE + GET ya no (dato único con timestamp).
+2. Descripción vacía → `400` y el conteo de actividades no crece.
+3. **Favorito:** PATCH favorite + GET confirma `favorite: true` (flujo diario: marcar lo importante) y limpia.
+
+**e2e** (`e2e/actividades.spec.js`, browser, `E2E_BASE_URL`):
+1. Registrar → log manual → ver en historial → borrar → ya no está.
+2. Duración 0 → `role=alert` con el error → no aparece en la lista.
+3. **Persistencia al recargar** (flujo diario: “¿sigue mi registro?”) → delete al final.
+
+**Qué NO va en cada suite (pirámide):** unitarios del TP5 cubren reglas con dobles (`validateActivityForm`, services). Integración no abre browser ni mockea la API. e2e no re-prueba cada rama de validación ni el coverage; sólo 3 flujos críticos. Vitest excluye `e2e/**` para no chocar con Playwright.
+
+### 6. Integración vs e2e — el par diagnóstico
+
+| integración | e2e | Lectura |
+|---|---|---|
+| 🟢 | 🔴 | Front roto / mal uso de la API; API+BD sanas |
+| 🔴 | ⬜ (no corre) | API o BD; no se gasta browser |
+| 🟢 | 🟢 | Nada de lo que estas dos ven |
+
+La evidencia pedida del TP: romper el **front** (texto del botón que la e2e busca) → smoke verde + integración verde + e2e roja. Eso es la fila 1 sin abrir el código.
+
+### 7. Por qué integración **amplia** (contra QA desplegada)
+
+Ya tenemos QA ejecutando la imagen de la corrida. La amplia prueba además el despliegue y el driver real de Postgres, con poca config. La estrecha (`WebApplicationFactory` + Postgres en el job) llega antes y aísla más, pero duplica infraestructura que el free tier ya nos da en QA. **Gana:** realismo + poco YAML. **Pierde:** depende de que QA esté vivo y es un entorno compartido (ver límite abajo).
+
+### 8. Cold start y flaky
+
+`timeout: 60s`, `expect: 15s`, `retries: 1` en Playwright. El smoke de `deploy-qa` despierta Render antes de las suites. Un flaky (pasa recién en el retry) aparece en el reporte HTML: un caso aislado puede ser red; el mismo test flaky dos corridas seguidas se arregla.
+
+### 9. Misma imagen de front en QA y PROD
+
+Adentro de la imagen: HTML/JS/CSS. Por variable: `BACKEND_URL` + `DNS_RESOLVER` (plantilla nginx). Por eso el front publicado una vez sirve los dos entornos.
+
+### 10. Límite conocido: QA compartido
+
+`integracion` + `e2e` alargan la ventana sobre un solo QA. Si otro merge redespliega mid-suite, puede haber rojo espurio o verde que mezcló imágenes. Cómo reconocerlo: *Events* de QA vs hora del `deploy-qa` de la otra corrida. Qué hacer: rechazar la corrida vieja (si llegó a pedir aprobación); no re-correr sus jobs contra la imagen nueva; un merge por vez mientras la cadena usa QA.
+
+### 11. Fallback local (compose)
+
+`compose.qa.yml` / `compose.prod.yml` usan `image: ghcr.io/…:${IMAGE_TAG:?falta IMAGE_TAG}` (sin `build:`). Con self-hosted: `IMAGE_TAG=sha-… docker compose -f compose.qa.yml pull && … up -d`.
+
+### 12. Accesibilidad para selectores e2e
+
+Se agregó `role="alert"` en toasts de error, `aria-label="Delete …"` en cada fila, y labels `sr-only` en timer/búsqueda/categoría. Las e2e usan `getByLabel` / `getByRole`, no CSS frágil.
+
+### 13. Problemas / IA
+
+- Render/Neon/secrets siguen fuera del alcance del token del agente → checklist §0.
+- Flow exige auth: las suites registran un usuario único por test (cookie de sesión en `request` / browser).
+- Confirm de borrado: `page.on('dialog', d => d.accept())`.
+- IA (Cursor Composer): workflow `imgURL` + jobs gate, Playwright, a11y, compose, esta sección. **Verificación:** leer `needs:` (`deploy-qa → integracion → e2e → deploy-prod`), ausencia de `continue-on-error`/`|| true` en el gate, specs con create/assert/cleanup, y tras el cableado manual las corridas + reportes en «Enlaces del TP7».
+
+---
+
 ## TP8 — Infraestructura como Código
 
 ### Riel y versiones fijadas
@@ -432,6 +553,5 @@ Quedan `compose.qa.yml` / `compose.prod.yml` (`name:` distintos, puertos 8080/30
 ### Declaración de uso de IA
 
 Asistido por **Cursor (Composer)**. Verificación: `terraform fmt`, `init -backend=false`, `validate` en verde; providers fijados; `.gitignore` cubre estado/tfvars **antes** de cualquier apply; ninguna clave en el HCL; `DATABASE_URL` y `BACKEND_URL` se derivan de recursos.
-
 
 

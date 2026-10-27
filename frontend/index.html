@@ -72,7 +72,9 @@
                         <div id="timer-idle-view">
                             <form id="timer-start-form" class="timer-form">
                                 <div class="timer-inputs">
+                                    <label class="sr-only" for="timer-desc">Timer description</label>
                                     <input type="text" id="timer-desc" class="input-lg" placeholder="e.g. Working on thesis..." required>
+                                    <label class="sr-only" for="timer-category-select">Timer category</label>
                                     <select id="timer-category-select" class="select-lg" required>
                                         <option value="" disabled selected>Select Category</option>
                                     </select>
@@ -158,6 +160,7 @@
                     <!-- Filter Controls -->
                     <div class="filter-toolbar">
                         <div class="search-box">
+                            <label class="sr-only" for="filter-search">Search activities</label>
                             <input type="text" id="filter-search" placeholder="🔍 Search description or notes...">
                         </div>
                         <div class="filter-selects">
@@ -260,7 +263,8 @@
                 <div class="modal-body">
                     <!-- Create new category form -->
                     <form id="create-category-form" class="category-create-row">
-                        <input type="color" id="new-cat-color" value="#4F46E5" class="color-picker" title="Choose color">
+                        <input type="color" id="new-cat-color" value="#4F46E5" class="color-picker" title="Choose color" aria-label="Category color">
+                        <label class="sr-only" for="new-cat-name">New category name</label>
                         <input type="text" id="new-cat-name" placeholder="New category name..." required maxlength="50">
                         <button type="submit" class="btn btn-primary btn-sm">+ Add</button>
                     </form>
