@@ -1,0 +1,49 @@
+name: Infra
+
+on:
+  pull_request:
+    paths: ["infra/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+  RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+  RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
+
+jobs:
+  infra-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: hashicorp/setup-terraform@v4
+      - name: Formato
+        run: terraform -chdir=infra fmt -check
+      - name: Init (sin backend) + validate
+        run: |
+          terraform -chdir=infra init -backend=false
+          terraform -chdir=infra validate
+
+  infra-plan:
+    runs-on: ubuntu-latest
+    needs: infra-check
+    steps:
+      - uses: actions/checkout@v6
+      - uses: hashicorp/setup-terraform@v4
+      - name: Plan
+        run: |
+          if [ -z "$NEON_API_KEY" ] || [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_OWNER_ID" ]; then
+            echo "Secrets NEON_API_KEY / RENDER_API_KEY / RENDER_OWNER_ID aún no cableados."
+            echo "El job infra-check (fmt+validate) ya verificó el HCL; el plan vive en tu máquina hasta entonces."
+            echo "(Opcional TP8 §3.6: gh secret set NEON_API_KEY && …)" > plan.txt
+            exit 0
+          fi
+          terraform -chdir=infra init
+          terraform -chdir=infra plan -no-color | tee plan.txt
+      - uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: tf-plan
+          path: plan.txt

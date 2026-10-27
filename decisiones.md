@@ -524,4 +524,34 @@ Se agregó `role="alert"` en toasts de error, `aria-label="Delete …"` en cada 
 - Confirm de borrado: `page.on('dialog', d => d.accept())`.
 - IA (Cursor Composer): workflow `imgURL` + jobs gate, Playwright, a11y, compose, esta sección. **Verificación:** leer `needs:` (`deploy-qa → integracion → e2e → deploy-prod`), ausencia de `continue-on-error`/`|| true` en el gate, specs con create/assert/cleanup, y tras el cableado manual las corridas + reportes en «Enlaces del TP7».
 
+---
+
+## TP8 — Infraestructura como Código
+
+### Riel y versiones fijadas
+
+- **Riel canónico**: Terraform + Neon + Render (mismo stack del TP6/TP7). QA y PROD **no se tocan**; se declara un entorno nuevo `preprod`.
+- **Terraform**: `>= 1.5` (validado localmente con **1.15.8**).
+- **Providers** (pinned en `infra/` + `.terraform.lock.hcl`):
+  - `kislerdm/neon` **0.18.0**
+  - `render-oss/render` **1.9.1**
+  - `hashicorp/random` **~> 3.6** (SESSION_SECRET derivado, no copiado)
+
+### Adaptaciones a Flow
+
+- Cadena de conexión: URI `postgres://…` en `DATABASE_URL` (no `ConnectionStrings__Default`).
+- Front: `BACKEND_URL` = `trimsuffix(render_web_service.api.url, "/")` + `DNS_RESOLVER=8.8.8.8`.
+- API: `AUTO_MIGRATE=true`, `COOKIE_SECURE=true`, `APP_ENV=preprod`.
+- Imagen por defecto: `ghcr.io/mateopappa/ingsoft3-tp01-{backend,frontend}` + `image_tag=sha-596edde…` (override al promover otra).
+
+### Problemas / notas
+
+- Sin `NEON_API_KEY` / `RENDER_*` en este entorno de agente no se puede `apply` aquí: el HCL + lock + `validate` sí; el `apply`/`destroy` de la defensa se corre en tu máquina con las tres vars exportadas.
+- Workflow opcional `.github/workflows/infra.yml`: `fmt`+`validate` siempre; `plan` publica artefacto si hay secrets, si no deja nota (no pone el PR en rojo).
+- Free tier Render: no modificar servicios `free` in-place — cambiar tag ⇒ `destroy`/`apply` o `-replace`.
+
+### Declaración de uso de IA
+
+Asistido por **Cursor (Composer)**. Verificación: `terraform fmt`, `init -backend=false`, `validate` en verde; providers fijados; `.gitignore` cubre estado/tfvars **antes** de cualquier apply; ninguna clave en el HCL; `DATABASE_URL` y `BACKEND_URL` se derivan de recursos.
+
 

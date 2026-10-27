@@ -13,6 +13,18 @@ backend/server
 .env
 *.local
 
+# Terraform (TP8) — estado y tfvars locales tienen secretos; el lock SÍ se versiona
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+!*.tfvars.example
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
 # basura del sistema operativo y del editor
 .DS_Store
 Thumbs.db
