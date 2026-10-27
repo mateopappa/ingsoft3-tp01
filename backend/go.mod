@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/getsentry/sentry-go v0.35.1
-	github.com/lib/pq v1.10.9
+	github.com/lib/pq v1.12.3
 	golang.org/x/crypto v0.28.0
 )
 
