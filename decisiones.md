@@ -536,13 +536,16 @@ Se agregó `role="alert"` en toasts de error, `aria-label="Delete …"` en cada 
 - Cadena de conexión: URI `postgres://…` en `DATABASE_URL` (no `ConnectionStrings__Default`).
 - Front: `BACKEND_URL` = `trimsuffix(render_web_service.api.url, "/")` + `DNS_RESOLVER=8.8.8.8`.
 - API: `AUTO_MIGRATE=true`, `COOKIE_SECURE=true`, `APP_ENV=preprod`.
-- Imagen por defecto: `ghcr.io/mateopappa/ingsoft3-tp01-{backend,frontend}` + `image_tag=sha-596edde…` (override al promover otra).
+- Imagen por defecto: `sha-e810b299b20b96f6ae2d3f99d1c762ea0c49fb18`. Tiene el fix de `Host $proxy_host` y el botón sigue diciendo `Save Activity`. `sha-596edde…` responde 508 en `/api`. El SHA del botón renombrado a `Save` (evidencia del TP7) no se usa acá.
 
 ### Problemas / notas
 
-- Sin `NEON_API_KEY` / `RENDER_*` en este entorno de agente no se puede `apply` aquí: el HCL + lock + `validate` sí; el `apply`/`destroy` de la defensa se corre en tu máquina con las tres vars exportadas.
-- Workflow opcional `.github/workflows/infra.yml`: `fmt`+`validate` siempre; `plan` publica artefacto si hay secrets, si no deja nota (no pone el PR en rojo).
-- Free tier Render: no modificar servicios `free` in-place — cambiar tag ⇒ `destroy`/`apply` o `-replace`.
+- Ciclo ya corrido el 26 oct 2026: `apply` creó Neon `flow-preprod` y los dos servicios, health con la base conectada, proxy del front en 200 y registro en 201; un segundo `plan` no tenía cambios; `destroy` bajó esos 6 recursos. QA, PROD y el proyecto Neon `flow` no se tocaron. Preprod queda destruido hasta la defensa, para poder hacer el `apply` en vivo y para no gastar las 750 h del free tier.
+- `RENDER_OWNER_ID` sale de `GET /v1/owners`. En esta cuenta es un id `tea-…`. El `usr-…` de la URL del dashboard Render lo rechaza.
+- Defensa, cuando el TP7 ya no esté desplegando QA: `set -a && source .env && set +a && cd infra && terraform init && terraform apply`, verificar `/api/health` del API y del front, y `terraform destroy`.
+- Tag `v8.0.0` sobre el merge de este ajuste, después del TP7. Crearlo ahora no redesplegaría (el workflow no corre en tags), pero el commit todavía no está en `main`.
+- Workflow `.github/workflows/infra.yml`: `fmt`+`validate` siempre; `plan` publica artefacto si hay secrets, si no deja nota. Las API keys quedan en `.env`, no en secrets del repo.
+- Free tier Render: no modificar servicios `free` in-place. Cambiar tag implica `destroy`/`apply` o `-replace`.
 
 ### Declaración de uso de IA
 
