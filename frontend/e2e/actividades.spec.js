@@ -14,7 +14,16 @@ async function registerFreshUser(page) {
 
 async function openManualLog(page) {
   await page.getByRole('button', { name: '+ Log Activity Manually' }).click()
-  await expect(page.getByLabel('Description')).toBeVisible()
+  // Exact label: getByLabel('Description') also matches "Timer description" (strict mode).
+  await expect(page.getByLabel('Description *')).toBeVisible()
+  await expect(page.getByLabel('Category *').locator('option', { hasText: 'Work' })).toHaveCount(1)
+}
+
+async function fillManualActivity(page, { description, hours, minutes }) {
+  await page.getByLabel('Description *').fill(description)
+  await page.getByLabel('Category *').selectOption({ label: 'Work' })
+  await page.getByLabel('Hours').fill(hours)
+  await page.getByLabel('Minutes').fill(minutes)
 }
 
 test('crear una actividad la muestra en la lista, y borrarla la saca', async ({ page }) => {
@@ -23,10 +32,7 @@ test('crear una actividad la muestra en la lista, y borrarla la saca', async ({ 
 
   const description = `e2e ${Date.now()}`
   await openManualLog(page)
-  await page.getByLabel('Description').fill(description)
-  await page.getByLabel('Category').selectOption({ label: 'Work' })
-  await page.getByLabel('Hours').fill('0')
-  await page.getByLabel('Minutes').fill('30')
+  await fillManualActivity(page, { description, hours: '0', minutes: '30' })
   await page.getByRole('button', { name: 'Save Activity' }).click()
 
   await expect(page.getByText(description)).toBeVisible()
@@ -40,10 +46,7 @@ test('duración cero muestra el error y no crea nada', async ({ page }) => {
 
   const description = `e2e bad ${Date.now()}`
   await openManualLog(page)
-  await page.getByLabel('Description').fill(description)
-  await page.getByLabel('Category').selectOption({ label: 'Work' })
-  await page.getByLabel('Hours').fill('0')
-  await page.getByLabel('Minutes').fill('0')
+  await fillManualActivity(page, { description, hours: '0', minutes: '0' })
   await page.getByRole('button', { name: 'Save Activity' }).click()
 
   await expect(page.getByRole('alert')).toBeVisible()
@@ -57,10 +60,7 @@ test('la actividad sigue en el historial al recargar', async ({ page }) => {
 
   const description = `e2e reload ${Date.now()}`
   await openManualLog(page)
-  await page.getByLabel('Description').fill(description)
-  await page.getByLabel('Category').selectOption({ label: 'Work' })
-  await page.getByLabel('Hours').fill('1')
-  await page.getByLabel('Minutes').fill('0')
+  await fillManualActivity(page, { description, hours: '1', minutes: '0' })
   await page.getByRole('button', { name: 'Save Activity' }).click()
   await expect(page.getByText(description)).toBeVisible()
 
