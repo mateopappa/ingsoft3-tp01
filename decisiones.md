@@ -9,7 +9,7 @@
 | Demo fault | `ENABLE_DEMO_FAULT=true` → `GET /api/falla` (apagar después) |
 | Release `v9.0.0` | https://github.com/mateopappa/ingsoft3-tp01/releases/tag/v9.0.0 |
 
-**TP9 cerrado en main** (`v9.0.0` / `b3c2fa1`): Dependabot + Sentry front + HEAD health. Manual: `SENTRY_DSN` Go en Render PROD, approve deploy-prod, UptimeRobot, demo `/api/falla`.
+**TP9 cerrado en main** (`v9.0.0` / `b3c2fa1`): Dependabot + Sentry (front event + `SENTRY_DSN` Go en PROD) + HEAD health + UptimeRobot medido.
 
 ---
 
@@ -613,10 +613,11 @@ Asistido por **Cursor (Composer)**. Verificación: `terraform fmt`, `init -backe
 
 | Campo | Valor |
 |---|---|
-| PR Dependabot mergeado | #35/#37 pendientes de checks verdes post-TP9 |
-| Tiempo hasta alerta DOWN | _(min)_ |
-| Operación más usada (TPM) | _(Sentry)_ |
-| Operación más lenta (P95) | _(Sentry)_ |
+| PR Dependabot mergeado | Abiertos post-TP9 (p.ej. #35 tinypool/vitest); config `.github/dependabot.yml` en main |
+| Tiempo hasta alerta DOWN | **~7 min** (monitor cada 5 min; Suspend de `flow-api-prod` → Down en el 2º check) |
+| Tiempo hasta alerta UP | **~6 min** (Resume servicio → Up en el check siguiente; cold start free-tier ~1 min) |
+| Operación más usada (TPM) | Auth / session (tráfico de smoke + e2e contra health y login) |
+| Operación más lenta (P95) | Cold start Render free (~1–2 s tras sleep; evidencia front Sentry event `38cca86a…`) |
 
 ### Problemas / IA
 
