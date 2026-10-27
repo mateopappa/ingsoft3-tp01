@@ -197,7 +197,8 @@ jobs:
           for i in $(seq 1 30); do
             if curl -fsS --max-time 10 "$URL_API/api/health" \
                && curl -fsS --max-time 10 "$URL_FRONT/" > /dev/null \
-               && curl -fsS --max-time 10 "$URL_FRONT/health" > /dev/null; then
+               && curl -fsS --max-time 10 "$URL_FRONT/health" > /dev/null \
+               && curl -fsS --max-time 10 "$URL_FRONT/api/health" > /dev/null; then
               BODY=$(curl -fsS --max-time 10 "$URL_API/api/health")
               echo "$BODY"
               echo "$BODY" | grep -q '"database":"connected"' || {
@@ -315,7 +316,8 @@ jobs:
           for i in $(seq 1 30); do
             if curl -fsS --max-time 10 "$URL_API/api/health" \
                && curl -fsS --max-time 10 "$URL_FRONT/" > /dev/null \
-               && curl -fsS --max-time 10 "$URL_FRONT/health" > /dev/null; then
+               && curl -fsS --max-time 10 "$URL_FRONT/health" > /dev/null \
+               && curl -fsS --max-time 10 "$URL_FRONT/api/health" > /dev/null; then
               BODY=$(curl -fsS --max-time 10 "$URL_API/api/health")
               echo "$BODY"
               echo "$BODY" | grep -q '"database":"connected"' || {
