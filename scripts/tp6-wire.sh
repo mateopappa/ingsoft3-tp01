@@ -140,6 +140,7 @@ create_or_get_service() {
   fi
   local env_json="$1"
   local body
+  # Render exige serviceDetails + image top-level (no runtime suelto).
   body=$(jq -n \
     --arg name "$svc_name" \
     --arg owner "$RENDER_OWNER_ID" \
@@ -151,17 +152,12 @@ create_or_get_service() {
       type: "web_service",
       name: $name,
       ownerId: $owner,
-      runtime: "image",
-      plan: "free",
-      region: $region,
-      image: { ownerId: $owner, imagePath: ($img + ":" + $tag) },
+      autoDeploy: "no",
+      image: { imagePath: ($img + ":" + $tag) },
       serviceDetails: {
         env: "image",
-        envSpecificDetails: {
-          dockerCommand: "",
-          dockerContext: "",
-          dockerfilePath: ""
-        }
+        plan: "free",
+        region: $region
       },
       envVars: $envVars
     }')

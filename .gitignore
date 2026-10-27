@@ -46,3 +46,4 @@ test-results/
 frontend/playwright-report/
 frontend/test-results/
 
+scripts/tp6-wire.secrets.env

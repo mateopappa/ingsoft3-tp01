@@ -10,10 +10,10 @@
 | Artefacto `playwright-report-integracion` (verde) | _(de esa misma corrida)_ |
 | Artefacto `playwright-report-e2e` (rojo) | _(de esa misma corrida)_ |
 | Corrida completa verde posterior → PROD | _(pegar Actions run hasta deploy-prod)_ |
-| URL QA (front) | _(pendiente Render image-backed)_ |
-| URL QA (api) | _(pendiente Render image-backed)_ |
-| URL PROD (front) | _(pendiente Render image-backed)_ |
-| URL PROD (api) | _(pendiente Render image-backed)_ |
+| URL QA (front) | https://flow-front-qa.onrender.com |
+| URL QA (api) | https://flow-api-qa-hzmk.onrender.com |
+| URL PROD (front) | https://flow-front-prod.onrender.com |
+| URL PROD (api) | https://flow-api-prod-4q78.onrender.com |
 | Release `v7.0.0` | _(tag sobre el SHA de Deployments/production)_ |
 
 **Checklist TP7 (sobre el del TP6):** ver § TP7 → «Setup manual pendiente».
@@ -30,10 +30,10 @@
 | Paquete público frontend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-frontend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-frontend:sha-596edde63b87b10552d01d59956ebcc343d2a814` |
 | Cadena 1 — PR con tests verdes y «Entrar al registry» **salteado** | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40088873425 (job `build-backend`: Entrar al registry = skipped) |
 | Cadena 2 — corrida de `main` con publish **después** de los tests | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40089010802 (último paso propio: Construir y publicar; Entrar al registry en verde) |
-| URL QA (front) | _(pendiente Render)_ |
-| URL QA (api) | _(pendiente Render)_ |
-| URL PROD (front) | _(pendiente Render)_ |
-| URL PROD (api) | _(pendiente Render)_ |
+| URL QA (front) | https://flow-front-qa.onrender.com |
+| URL QA (api) | https://flow-api-qa-hzmk.onrender.com |
+| URL PROD (front) | https://flow-front-prod.onrender.com |
+| URL PROD (api) | https://flow-api-prod-4q78.onrender.com |
 
 **Checklist de cableado (una vez, en tu cuenta):** ver § TP6 → «Setup manual pendiente».
 
