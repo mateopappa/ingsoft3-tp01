@@ -162,6 +162,9 @@ jobs:
     # a GHCR sigue siendo la entrega parcial; el deploy no ensucia main en rojo.
     if: github.ref == 'refs/heads/main' && vars.QA_API_URL != '' && vars.QA_FRONT_URL != ''
     environment: qa
+    concurrency:
+      group: deploy-qa
+      cancel-in-progress: false
     steps:
       - name: Desplegar en QA la IMAGEN del commit (api + front)
         shell: bash
