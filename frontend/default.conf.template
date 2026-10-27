@@ -15,17 +15,22 @@ server {
     resolver ${DNS_RESOLVER} valid=10s ipv6=off;
     set $backend_api ${BACKEND_URL};
 
+    # Host MUST be the upstream API host ($proxy_host), not $host.
+    # With Host=<front>.onrender.com Render routes back to this same service → 508 loop
+    # (x-render-routing: loop). Smoke uses /health + API directa; e2e pega /api via front.
     location /api/ {
         proxy_pass $backend_api;
         proxy_ssl_server_name on;
-        proxy_set_header Host $host;
+        proxy_set_header Host $proxy_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_cookie_path / /;
     }
 
     location /health {
         proxy_pass $backend_api/api/health;
         proxy_ssl_server_name on;
+        proxy_set_header Host $proxy_host;
     }
 }
