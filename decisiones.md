@@ -4,19 +4,19 @@
 
 | Qué | URL |
 |---|---|
-| Paquete público backend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-backend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-backend:sha-<commit-de-PROD>` |
-| Paquete público frontend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-frontend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-frontend:sha-<commit-de-PROD>` |
+| Paquete público backend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-backend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-backend:sha-b468ca1da77ef75dc407513b40b9d1b143d820d9` |
+| Paquete público frontend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-frontend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-frontend:sha-b468ca1da77ef75dc407513b40b9d1b143d820d9` |
 | Corrida **integración VERDE + e2e ROJA** (commit que rompió el front) | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40438437478 · SHA `308bd23` (`Save Activity`→`Save`; e2e timeout buscando el botón; `deploy-prod` skipped) |
 | Artefacto `playwright-report-integracion` (verde) | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40438437478#artifacts |
 | Artefacto `playwright-report-e2e` (rojo) | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40438437478#artifacts |
-| Corrida completa verde posterior → PROD | _(pegar Actions run hasta deploy-prod)_ |
+| Corrida completa verde posterior → PROD | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40439182898 · SHA `b468ca1` (e2e🟢 → approve → deploy-prod🟢) |
 | URL QA (front) | https://flow-front-qa.onrender.com |
 | URL QA (api) | https://flow-api-qa-hzmk.onrender.com |
 | URL PROD (front) | https://flow-front-prod.onrender.com |
 | URL PROD (api) | https://flow-api-prod-4q78.onrender.com |
-| Release `v7.0.0` | _(tag sobre el SHA de Deployments/production)_ |
+| Release `v7.0.0` | https://github.com/mateopappa/ingsoft3-tp01/releases/tag/v7.0.0 · tag sobre `b468ca1` (Deployments/production) |
 
-**Checklist TP7 (sobre el del TP6):** ver § TP7 → «Setup manual pendiente».
+**TP7 cerrado:** gate e2e, evidencia rojo→verde, `v7.0.0` en PROD.
 
 ---
 
@@ -431,19 +431,11 @@ Quedan `compose.qa.yml` / `compose.prod.yml` (`name:` distintos, puertos 8080/30
 
 ## TP7 — Contenedores en el pipeline + integración y e2e
 
-### 0. Setup manual pendiente (bloquea evidencia viva / gate rojo / v7.0.0)
+### 0. Setup / evidencia TP7 — cerrado
 
-El código del TP7 está en el repo (`imgURL`, jobs `integracion`/`e2e`, Playwright, a11y, compose con `image:`). Falta cablear en la cuenta `mateopappa` (el agente no puede crear Render/Neon ni secrets/vars):
+Cableado del TP6 + servicios *Existing Image* + cadena `build → deploy-qa → integracion → e2e → [approve] → deploy-prod`.
 
-1. Completar el checklist del TP6 (Neon + 4 servicios Render + environments + vars + packages públicos).
-2. **Cambiar la fuente** de los 4 servicios a *Existing Image* (no crear servicios nuevos si se puede evitar):
-   - api QA/PROD → `ghcr.io/mateopappa/ingsoft3-tp01-backend:sha-<40-chars-del-último-main>`
-   - front QA/PROD → `ghcr.io/mateopappa/ingsoft3-tp01-frontend:sha-<mismo>`
-   - Probar **un** servicio a mano con el hook + `imgURL` antes de los otros tres.
-3. Variables de entorno de cada servicio **no se tocan** (`DATABASE_URL`, `BACKEND_URL`, etc.): la misma imagen de front sirve QA y PROD.
-4. Tras merge a `main` con vars seteadas: cadena `build → deploy-qa (imgURL) → integracion → e2e → [aprobación] → deploy-prod (misma imgURL)`.
-5. Evidencia central: romper el **front** (p. ej. texto del botón `Save Activity` → `Save`) **sin tocar `e2e/`** → smoke verde + integración verde + e2e roja → `deploy-prod` no pide aprobación. Pegar links en «Enlaces del TP7».
-6. Fix → cadena verde → aprobar PROD → tag `v7.0.0` sobre el SHA de *Deployments* `production` (`gh release create v7.0.0 --verify-tag`).
+Evidencia: rotura `Save Activity`→`Save` → run [40438437478](https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40438437478) (integración🟢 e2e🔴 deploy-prod skipped). Fix → run [40439182898](https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40439182898) → PROD `b468ca1` → release [`v7.0.0`](https://github.com/mateopappa/ingsoft3-tp01/releases/tag/v7.0.0). Extra: `binary_parameters=yes` para Neon pooler (migraciones).
 
 ### 1. Build once, deploy many — qué problema del TP6 cierra
 
