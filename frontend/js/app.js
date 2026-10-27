@@ -6,6 +6,9 @@ import { formatSeconds } from './lib/format.js';
 import { validateAuthInput, validateActivityForm } from './lib/validate.js';
 import { createApiClient } from './lib/api.js';
 import { buildActivityQueryParams } from './lib/filters.js';
+import { initSentry } from './lib/sentry.js';
+
+initSentry();
 
 document.addEventListener('DOMContentLoaded', () => {
     const api = createApiClient();

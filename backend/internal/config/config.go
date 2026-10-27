@@ -18,6 +18,8 @@ type Config struct {
 	CookieSecure           bool
 	AutoMigrate            bool
 	LogLevel               string
+	SentryDSN              string
+	EnableDemoFault        bool
 }
 
 // Load reads configuration from environment variables, falling back to sensible defaults.
@@ -34,6 +36,9 @@ func Load() (*Config, error) {
 		CookieSecure:           getEnvAsBool("COOKIE_SECURE", false),
 		AutoMigrate:            getEnvAsBool("AUTO_MIGRATE", true),
 		LogLevel:               getEnv("LOG_LEVEL", "info"),
+		SentryDSN:              getEnv("SENTRY_DSN", ""),
+		// ENABLE_DEMO_FAULT=true exposes GET /api/falla for the TP9 Sentry exercise. Keep off in real prod.
+		EnableDemoFault: getEnvAsBool("ENABLE_DEMO_FAULT", false),
 	}
 
 	if cfg.DatabaseURL == "" {
