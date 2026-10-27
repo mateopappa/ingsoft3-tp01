@@ -337,19 +337,33 @@ Si un test fue sugerido por IA y no puedo decir qué caso **no** cubre, no cuent
 
 ### 0. Setup manual pendiente (bloquea URLs vivas / approve / rechazo)
 
-Este agente **no puede** crear cuentas en Render/Neon ni environments/secrets en GitHub (403). El código del pipeline ya está; falta cablear en tu usuario `mateopappa`:
+Pipeline + GHCR ya están en `main`. GitHub Environments: **`qa`** (sin reviewers) y **`production`** (required reviewer = `mateopappa`, *Prevent self-review* OFF) ya existen. Faltan Neon + 4 servicios Render image-backed + hooks/vars.
 
-1. **Neon** — proyecto con databases `app_qa` y `app_prod`. Copiá `DATABASE_URL` de cada una (URI `postgres://…`). Flow usa `DATABASE_URL` + `AUTO_MIGRATE=true` (las tablas se crean al primer arranque).
-2. **Render** — 4 Web Services Docker, Auto-Deploy **OFF**:
-   - `flow-api-qa` / `flow-api-prod` — Root Directory `backend`; env: `DATABASE_URL`, `SESSION_SECRET`, `AUTO_MIGRATE=true`, `COOKIE_SECURE=true`, `APP_ENV=qa|production`
-   - `flow-front-qa` / `flow-front-prod` — Root Directory `frontend`; env: `BACKEND_URL=https://<api-de-ESE-entorno>` (sin `/` final), `DNS_RESOLVER=8.8.8.8`
-3. **GitHub Environments**
-   - `qa` (sin reviewers) + secrets `RENDER_HOOK_API_QA`, `RENDER_HOOK_FRONT_QA`
-   - `production` + **Required reviewers** = vos; *Prevent self-review* **OFF** + secrets `RENDER_HOOK_API_PROD`, `RENDER_HOOK_FRONT_PROD`
-4. **Variables de repo** (Settings → Actions → Variables): `QA_API_URL`, `QA_FRONT_URL`, `PROD_API_URL`, `PROD_FRONT_URL`
-5. Tras el primer push a `main` que publique: hacer **públicos** los dos packages en GHCR; `docker logout ghcr.io` y `docker pull …:sha-<commit>`
-6. Flujo: merge → deploy-qa automático → Waiting for review en prod → **rechazar una vez** con motivo propio → aprobar otra → tag `v6.0.0` en el SHA de PROD + release
-7. Rollback cronometrado: redeploy del SHA de `v6.0.0` vía hook; anotar minutos desde *Deploys → live*
+**Camino preferido (dueño del repo):** mergear/usar [`scripts/tp6-wire.sh`](scripts/tp6-wire.sh) (PR #30):
+
+```bash
+gh auth login   # mateopappa
+export NEON_API_KEY='…'          # Neon → Account settings → API keys
+export RENDER_API_KEY='rnd_…'    # Render → Account Settings → API Keys
+export RENDER_OWNER_ID='usr-…'   # de la URL del dashboard (usr-… o tea-…)
+./scripts/tp6-wire.sh
+```
+
+El script crea DBs `app_qa`/`app_prod`, servicios `flow-{api,front}-{qa,prod}` (runtime image / GHCR), secrets de hooks y vars `QA_*`/`PROD_*_URL`.
+
+**Fallback manual** (si preferís el dashboard):
+
+1. **Neon** — proyecto con databases `app_qa` y `app_prod`. Copiá `DATABASE_URL` de cada una. Flow usa `DATABASE_URL` + `AUTO_MIGRATE=true`.
+2. **Render** — 4 Web Services **Existing Image** (no rebuild del repo; `main` ya tiene TP7 `imgURL`), Auto-Deploy **OFF**:
+   - `flow-api-qa` / `flow-api-prod` → `ghcr.io/mateopappa/ingsoft3-tp01-backend:sha-<40-chars-de-main>`  
+     env: `DATABASE_URL`, `SESSION_SECRET`, `AUTO_MIGRATE=true`, `COOKIE_SECURE=true`, `APP_ENV=qa|production`, `APP_PORT=8080`
+   - `flow-front-qa` / `flow-front-prod` → `ghcr.io/mateopappa/ingsoft3-tp01-frontend:sha-<mismo>`  
+     env: `BACKEND_URL=https://<api-de-ESE-entorno>` (sin `/` final), `DNS_RESOLVER=8.8.8.8`
+3. **Secrets de environment** — `RENDER_HOOK_API_QA` / `RENDER_HOOK_FRONT_QA` en `qa`; `RENDER_HOOK_API_PROD` / `RENDER_HOOK_FRONT_PROD` en `production` (Deploy Hook de cada servicio).
+4. **Variables de repo**: `QA_API_URL`, `QA_FRONT_URL`, `PROD_API_URL`, `PROD_FRONT_URL` (sin `/` final).
+5. Packages GHCR **públicos**; `docker logout ghcr.io` y `docker pull …:sha-<commit>`.
+6. Flujo: empty commit / push `main` → deploy-qa → Waiting en prod → **rechazar una vez** → aprobar otra → tag `v6.0.0` en el SHA de PROD + release.
+7. Rollback cronometrado: redeploy del SHA de `v6.0.0` vía hook; anotar minutos desde *Deploys → live*.
 
 ### 1. Artefacto: por qué sólo se publica con verificación verde
 
