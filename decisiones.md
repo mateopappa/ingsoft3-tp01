@@ -9,7 +9,7 @@
 | Demo fault | `ENABLE_DEMO_FAULT=true` → `GET /api/falla` (apagar después) |
 | Release `v9.0.0` | https://github.com/mateopappa/ingsoft3-tp01/releases/tag/v9.0.0 |
 
-**TP9:** Dependabot + Sentry + HEAD health en main; DSN Go cablear en Render PROD.
+**TP9 cerrado en main** (`v9.0.0` / `b3c2fa1`): Dependabot + Sentry front + HEAD health. Manual: `SENTRY_DSN` Go en Render PROD, approve deploy-prod, UptimeRobot, demo `/api/falla`.
 
 ---
 
@@ -613,7 +613,7 @@ Asistido por **Cursor (Composer)**. Verificación: `terraform fmt`, `init -backe
 
 | Campo | Valor |
 |---|---|
-| PR Dependabot mergeado | _(URL)_ |
+| PR Dependabot mergeado | #35/#37 pendientes de checks verdes post-TP9 |
 | Tiempo hasta alerta DOWN | _(min)_ |
 | Operación más usada (TPM) | _(Sentry)_ |
 | Operación más lenta (P95) | _(Sentry)_ |
