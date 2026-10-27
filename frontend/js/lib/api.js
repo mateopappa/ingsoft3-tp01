@@ -13,6 +13,7 @@ export function createApiClient(fetchImpl = globalThis.fetch) {
      */
     async request(endpoint, options = {}) {
       const config = {
+        credentials: 'same-origin',
         ...options,
         headers: {
           'Content-Type': 'application/json',

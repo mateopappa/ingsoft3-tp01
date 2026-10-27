@@ -198,6 +198,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderCategoryDropdowns() {
+        const preserve = {
+            timer: timerCategorySelect.value,
+            filter: filterCategory.value,
+            modal: modalCategory.value,
+        };
         const populate = (selectElement, includeAllOption = false) => {
             selectElement.innerHTML = '';
             if (includeAllOption) {
@@ -217,6 +222,9 @@ document.addEventListener('DOMContentLoaded', () => {
         populate(timerCategorySelect, false);
         populate(filterCategory, true);
         populate(modalCategory, false);
+        if (preserve.timer) timerCategorySelect.value = preserve.timer;
+        if (preserve.filter) filterCategory.value = preserve.filter;
+        if (preserve.modal) modalCategory.value = preserve.modal;
     }
 
     function renderCategoryManagementList() {
