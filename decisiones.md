@@ -1,3 +1,17 @@
+# Enlaces del TP8 — IaC (preprod)
+
+| Qué | URL |
+|---|---|
+| Código Terraform (`infra/`) | https://github.com/mateopappa/ingsoft3-tp01/tree/main/infra |
+| Workflow `infra.yml` (fmt/validate/plan) | https://github.com/mateopappa/ingsoft3-tp01/actions/workflows/infra.yml |
+| Imagen default preprod | `ghcr.io/mateopappa/ingsoft3-tp01-{backend,frontend}:sha-b468ca1da77ef75dc407513b40b9d1b143d820d9` (= `v7.0.0`) |
+| Ciclo apply→health→destroy | Documentado en § TP8 (26 oct 2026; preprod destruido a propósito hasta la defensa) |
+| Release `v8.0.0` | https://github.com/mateopappa/ingsoft3-tp01/releases/tag/v8.0.0 |
+
+**TP8 cerrado:** preprod solo vía Terraform; QA/PROD intocados; keys fuera del HCL.
+
+---
+
 # Enlaces del TP7
 
 > Completar tras el primer deploy **image-backed** + corrida con gate e2e. Quien corrige navega desde acá.
@@ -536,13 +550,15 @@ Se agregó `role="alert"` en toasts de error, `aria-label="Delete …"` en cada 
 - Cadena de conexión: URI `postgres://…` en `DATABASE_URL` (no `ConnectionStrings__Default`).
 - Front: `BACKEND_URL` = `trimsuffix(render_web_service.api.url, "/")` + `DNS_RESOLVER=8.8.8.8`.
 - API: `AUTO_MIGRATE=true`, `COOKIE_SECURE=true`, `APP_ENV=preprod`.
-- Imagen por defecto: `ghcr.io/mateopappa/ingsoft3-tp01-{backend,frontend}` + `image_tag=sha-596edde…` (override al promover otra).
+- Imagen por defecto: `sha-b468ca1…` (= release `v7.0.0` / PROD). `sha-596edde…` responde 508 en `/api`.
 
 ### Problemas / notas
 
-- Sin `NEON_API_KEY` / `RENDER_*` en este entorno de agente no se puede `apply` aquí: el HCL + lock + `validate` sí; el `apply`/`destroy` de la defensa se corre en tu máquina con las tres vars exportadas.
-- Workflow opcional `.github/workflows/infra.yml`: `fmt`+`validate` siempre; `plan` publica artefacto si hay secrets, si no deja nota (no pone el PR en rojo).
-- Free tier Render: no modificar servicios `free` in-place — cambiar tag ⇒ `destroy`/`apply` o `-replace`.
+- Ciclo ya corrido el 26 oct 2026: `apply` creó Neon `flow-preprod` y los dos servicios, health OK; `plan` idempotente; `destroy` de los 6 recursos. QA/PROD y Neon `flow` no se tocaron. Preprod destruido a propósito (cuota free + `apply` en vivo en la defensa).
+- `RENDER_OWNER_ID` = id de `GET /v1/owners` (`tea-…`); el `usr-…` del dashboard no sirve.
+- Defensa: `set -a && source .env && set +a && cd infra && terraform init && terraform apply` → health API/front → `terraform destroy`.
+- Workflow `.github/workflows/infra.yml`: `fmt`+`validate` siempre; `plan` opcional con secrets. Keys en `.env` local, no en el HCL.
+- Free tier: cambiar tag ⇒ `destroy`/`apply` o `-replace` (no update in-place).
 
 ### Declaración de uso de IA
 

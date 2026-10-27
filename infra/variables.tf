@@ -13,8 +13,9 @@ variable "image_repo_front" {
 variable "image_tag" {
   type        = string
   description = "Immutable image tag from the TP7 pipeline (sha-<40-char-commit>)."
-  # Published on main by TP6/TP7 publish job; override when promoting a newer sha.
-  default = "sha-596edde63b87b10552d01d59956ebcc343d2a814"
+  # b468ca1 = v7.0.0 / PROD: Host $proxy_host, Neon pooler fix, Save Activity.
+  # sha-596edde… loops /api (508). Override with -var when promoting a newer sha.
+  default = "sha-b468ca1da77ef75dc407513b40b9d1b143d820d9"
 }
 
 variable "region" {
