@@ -1,22 +1,51 @@
+# Enlaces del TP9 — DevSecOps
+
+| Qué | URL |
+|---|---|
+| Dependabot config | https://github.com/mateopappa/ingsoft3-tp01/blob/main/.github/dependabot.yml |
+| Sentry Browser (front DSN en código) | proyecto `4512325842436096` · `frontend/static/js/lib/sentry.js` |
+| Sentry Go (DSN solo en Render `SENTRY_DSN`) | proyecto `4512325837062145` · PROD api env |
+| Health PROD (monitor) | https://flow-api-prod-4q78.onrender.com/api/health |
+| Demo fault | `ENABLE_DEMO_FAULT=true` → `GET /api/falla` (apagar después) |
+| Release `v9.0.0` | https://github.com/mateopappa/ingsoft3-tp01/releases/tag/v9.0.0 |
+
+**TP9:** Dependabot + Sentry + HEAD health en main; DSN Go cablear en Render PROD.
+
+---
+
+# Enlaces del TP8 — IaC (preprod)
+
+| Qué | URL |
+|---|---|
+| Código Terraform (`infra/`) | https://github.com/mateopappa/ingsoft3-tp01/tree/main/infra |
+| Workflow `infra.yml` (fmt/validate/plan) | https://github.com/mateopappa/ingsoft3-tp01/actions/workflows/infra.yml |
+| Imagen default preprod | `ghcr.io/mateopappa/ingsoft3-tp01-{backend,frontend}:sha-b468ca1da77ef75dc407513b40b9d1b143d820d9` (= `v7.0.0`) |
+| Ciclo apply→health→destroy | Documentado en § TP8 (26 oct 2026; preprod destruido a propósito hasta la defensa) |
+| Release `v8.0.0` | https://github.com/mateopappa/ingsoft3-tp01/releases/tag/v8.0.0 |
+
+**TP8 cerrado:** preprod solo vía Terraform; QA/PROD intocados; keys fuera del HCL.
+
+---
+
 # Enlaces del TP7
 
 > Completar tras el primer deploy **image-backed** + corrida con gate e2e. Quien corrige navega desde acá.
 
 | Qué | URL |
 |---|---|
-| Paquete público backend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-backend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-backend:sha-<commit-de-PROD>` |
-| Paquete público frontend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-frontend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-frontend:sha-<commit-de-PROD>` |
-| Corrida **integración VERDE + e2e ROJA** (commit que rompió el front) | _(pegar Actions run + SHA del commit de rotura)_ |
-| Artefacto `playwright-report-integracion` (verde) | _(de esa misma corrida)_ |
-| Artefacto `playwright-report-e2e` (rojo) | _(de esa misma corrida)_ |
-| Corrida completa verde posterior → PROD | _(pegar Actions run hasta deploy-prod)_ |
-| URL QA (front) | _(pendiente Render image-backed)_ |
-| URL QA (api) | _(pendiente Render image-backed)_ |
-| URL PROD (front) | _(pendiente Render image-backed)_ |
-| URL PROD (api) | _(pendiente Render image-backed)_ |
-| Release `v7.0.0` | _(tag sobre el SHA de Deployments/production)_ |
+| Paquete público backend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-backend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-backend:sha-b468ca1da77ef75dc407513b40b9d1b143d820d9` |
+| Paquete público frontend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-frontend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-frontend:sha-b468ca1da77ef75dc407513b40b9d1b143d820d9` |
+| Corrida **integración VERDE + e2e ROJA** (commit que rompió el front) | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40438437478 · SHA `308bd23` (`Save Activity`→`Save`; e2e timeout buscando el botón; `deploy-prod` skipped) |
+| Artefacto `playwright-report-integracion` (verde) | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40438437478#artifacts |
+| Artefacto `playwright-report-e2e` (rojo) | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40438437478#artifacts |
+| Corrida completa verde posterior → PROD | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40439182898 · SHA `b468ca1` (e2e🟢 → approve → deploy-prod🟢) |
+| URL QA (front) | https://flow-front-qa.onrender.com |
+| URL QA (api) | https://flow-api-qa-hzmk.onrender.com |
+| URL PROD (front) | https://flow-front-prod.onrender.com |
+| URL PROD (api) | https://flow-api-prod-4q78.onrender.com |
+| Release `v7.0.0` | https://github.com/mateopappa/ingsoft3-tp01/releases/tag/v7.0.0 · tag sobre `b468ca1` (Deployments/production) |
 
-**Checklist TP7 (sobre el del TP6):** ver § TP7 → «Setup manual pendiente».
+**TP7 cerrado:** gate e2e, evidencia rojo→verde, `v7.0.0` en PROD.
 
 ---
 
@@ -26,14 +55,16 @@
 
 | Qué | URL |
 |---|---|
-| Paquete público backend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-backend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-backend:sha-596edde63b87b10552d01d59956ebcc343d2a814` |
-| Paquete público frontend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-frontend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-frontend:sha-596edde63b87b10552d01d59956ebcc343d2a814` |
+| Paquete público backend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-backend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-backend:sha-f6270ba5989376ee3067198ecf42e560e550fe96` |
+| Paquete público frontend (GHCR) | https://github.com/users/mateopappa/packages/container/package/ingsoft3-tp01-frontend · `docker pull --platform linux/amd64 ghcr.io/mateopappa/ingsoft3-tp01-frontend:sha-f6270ba5989376ee3067198ecf42e560e550fe96` |
 | Cadena 1 — PR con tests verdes y «Entrar al registry» **salteado** | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40088873425 (job `build-backend`: Entrar al registry = skipped) |
 | Cadena 2 — corrida de `main` con publish **después** de los tests | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40089010802 (último paso propio: Construir y publicar; Entrar al registry en verde) |
-| URL QA (front) | _(pendiente Render)_ |
-| URL QA (api) | _(pendiente Render)_ |
-| URL PROD (front) | _(pendiente Render)_ |
-| URL PROD (api) | _(pendiente Render)_ |
+| URL QA (front) | https://flow-front-qa.onrender.com |
+| URL QA (api) | https://flow-api-qa-hzmk.onrender.com |
+| URL PROD (front) | https://flow-front-prod.onrender.com |
+| URL PROD (api) | https://flow-api-prod-4q78.onrender.com |
+| Release `v6.0.0` | https://github.com/mateopappa/ingsoft3-tp01/releases/tag/v6.0.0 · SHA `f6270ba` |
+| Corrida PROD approve | https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40435097687 |
 
 **Checklist de cableado (una vez, en tu cuenta):** ver § TP6 → «Setup manual pendiente».
 
@@ -429,19 +460,11 @@ Quedan `compose.qa.yml` / `compose.prod.yml` (`name:` distintos, puertos 8080/30
 
 ## TP7 — Contenedores en el pipeline + integración y e2e
 
-### 0. Setup manual pendiente (bloquea evidencia viva / gate rojo / v7.0.0)
+### 0. Setup / evidencia TP7 — cerrado
 
-El código del TP7 está en el repo (`imgURL`, jobs `integracion`/`e2e`, Playwright, a11y, compose con `image:`). Falta cablear en la cuenta `mateopappa` (el agente no puede crear Render/Neon ni secrets/vars):
+Cableado del TP6 + servicios *Existing Image* + cadena `build → deploy-qa → integracion → e2e → [approve] → deploy-prod`.
 
-1. Completar el checklist del TP6 (Neon + 4 servicios Render + environments + vars + packages públicos).
-2. **Cambiar la fuente** de los 4 servicios a *Existing Image* (no crear servicios nuevos si se puede evitar):
-   - api QA/PROD → `ghcr.io/mateopappa/ingsoft3-tp01-backend:sha-<40-chars-del-último-main>`
-   - front QA/PROD → `ghcr.io/mateopappa/ingsoft3-tp01-frontend:sha-<mismo>`
-   - Probar **un** servicio a mano con el hook + `imgURL` antes de los otros tres.
-3. Variables de entorno de cada servicio **no se tocan** (`DATABASE_URL`, `BACKEND_URL`, etc.): la misma imagen de front sirve QA y PROD.
-4. Tras merge a `main` con vars seteadas: cadena `build → deploy-qa (imgURL) → integracion → e2e → [aprobación] → deploy-prod (misma imgURL)`.
-5. Evidencia central: romper el **front** (p. ej. texto del botón `Save Activity` → `Save`) **sin tocar `e2e/`** → smoke verde + integración verde + e2e roja → `deploy-prod` no pide aprobación. Pegar links en «Enlaces del TP7».
-6. Fix → cadena verde → aprobar PROD → tag `v7.0.0` sobre el SHA de *Deployments* `production` (`gh release create v7.0.0 --verify-tag`).
+Evidencia: rotura `Save Activity`→`Save` → run [40438437478](https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40438437478) (integración🟢 e2e🔴 deploy-prod skipped). Fix → run [40439182898](https://github.com/mateopappa/ingsoft3-tp01/actions/runs/40439182898) → PROD `b468ca1` → release [`v7.0.0`](https://github.com/mateopappa/ingsoft3-tp01/releases/tag/v7.0.0). Extra: `binary_parameters=yes` para Neon pooler (migraciones).
 
 ### 1. Build once, deploy many — qué problema del TP6 cierra
 
@@ -542,16 +565,61 @@ Se agregó `role="alert"` en toasts de error, `aria-label="Delete …"` en cada 
 - Cadena de conexión: URI `postgres://…` en `DATABASE_URL` (no `ConnectionStrings__Default`).
 - Front: `BACKEND_URL` = `trimsuffix(render_web_service.api.url, "/")` + `DNS_RESOLVER=8.8.8.8`.
 - API: `AUTO_MIGRATE=true`, `COOKIE_SECURE=true`, `APP_ENV=preprod`.
-- Imagen por defecto: `ghcr.io/mateopappa/ingsoft3-tp01-{backend,frontend}` + `image_tag=sha-596edde…` (override al promover otra).
+- Imagen por defecto: `sha-b468ca1…` (= release `v7.0.0` / PROD). `sha-596edde…` responde 508 en `/api`.
 
 ### Problemas / notas
 
-- Sin `NEON_API_KEY` / `RENDER_*` en este entorno de agente no se puede `apply` aquí: el HCL + lock + `validate` sí; el `apply`/`destroy` de la defensa se corre en tu máquina con las tres vars exportadas.
-- Workflow opcional `.github/workflows/infra.yml`: `fmt`+`validate` siempre; `plan` publica artefacto si hay secrets, si no deja nota (no pone el PR en rojo).
-- Free tier Render: no modificar servicios `free` in-place — cambiar tag ⇒ `destroy`/`apply` o `-replace`.
+- Ciclo ya corrido el 26 oct 2026: `apply` creó Neon `flow-preprod` y los dos servicios, health OK; `plan` idempotente; `destroy` de los 6 recursos. QA/PROD y Neon `flow` no se tocaron. Preprod destruido a propósito (cuota free + `apply` en vivo en la defensa).
+- `RENDER_OWNER_ID` = id de `GET /v1/owners` (`tea-…`); el `usr-…` del dashboard no sirve.
+- Defensa: `set -a && source .env && set +a && cd infra && terraform init && terraform apply` → health API/front → `terraform destroy`.
+- Workflow `.github/workflows/infra.yml`: `fmt`+`validate` siempre; `plan` opcional con secrets. Keys en `.env` local, no en el HCL.
+- Free tier: cambiar tag ⇒ `destroy`/`apply` o `-replace` (no update in-place).
 
 ### Declaración de uso de IA
 
 Asistido por **Cursor (Composer)**. Verificación: `terraform fmt`, `init -backend=false`, `validate` en verde; providers fijados; `.gitignore` cubre estado/tfvars **antes** de cualquier apply; ninguna clave en el HCL; `DATABASE_URL` y `BACKEND_URL` se derivan de recursos.
 
+## TP9 — DevSecOps + Observabilidad + Continuous Feedback
 
+### Qué quedó prendido en la cuenta (2026-10-27)
+
+| Pieza | Estado |
+|---|---|
+| Secret scanning + push protection | Enabled en el repo público |
+| Dependabot alerts | ON |
+| Dependabot security updates | ON (PRs abiertos, p.ej. `golang.org/x/crypto`) |
+| CodeQL default | Configurado (go, javascript, actions) |
+| `HEAD /api/health` | PROD y QA responden **200** a `curl -I` |
+
+### Código
+
+| Pieza | Qué hace |
+|---|---|
+| Dependabot | `.github/dependabot.yml` — gomod `/backend`, npm `/frontend`, github-actions `/` |
+| Sentry back | `SENTRY_DSN` por env; vacío = apagado. `Recoverer` reporta panics al hub |
+| Sentry front | `frontend/static/js/lib/sentry.js` + `frontend/js/lib/sentry.js` — DSN Browser `4512325842436096` |
+| Falla demo | `ENABLE_DEMO_FAULT=true` → `GET /api/falla` → Sentry + 500; apagar después |
+| Go | `go 1.25` + `sentry-go` |
+
+### Cierre / evidencia
+
+1. Merge TP9 → redeploy QA/PROD.
+2. Merge ≥1 Dependabot verde (#35 o #37; no #34 en rojo).
+3. Render PROD api: `SENTRY_DSN` = DSN del proyecto Go `4512325837062145` (no va en el repo).
+4. `ENABLE_DEMO_FAULT=true` → `GET /api/falla` → evento en Sentry → flag off.
+5. UptimeRobot en `https://flow-api-prod-4q78.onrender.com/api/health` → anotar DOWN/UP → pausar.
+6. Tarjeta TP3 con un número medido.
+7. Release `v9.0.0`.
+
+| Campo | Valor |
+|---|---|
+| PR Dependabot mergeado | _(URL)_ |
+| Tiempo hasta alerta DOWN | _(min)_ |
+| Operación más usada (TPM) | _(Sentry)_ |
+| Operación más lenta (P95) | _(Sentry)_ |
+
+### Problemas / IA
+
+- Front sin bundler: Sentry vía CDN ESM.
+- DSN front en código a propósito (sólo envía).
+- IA (Cursor): Dependabot, Sentry, HEAD, esta sección. Verificación: CodeQL/Dependabot ON, `curl -I` 200, `go test` middleware.

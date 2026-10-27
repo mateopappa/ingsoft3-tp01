@@ -26,6 +26,7 @@ type RouterConfig struct {
 	DashboardHandler *dashboard.Handler
 	DB               *sql.DB
 	WebFS            fs.FS
+	EnableDemoFault  bool
 }
 
 // NewRouter sets up the application routes, middleware, and static asset handlers.
@@ -34,7 +35,8 @@ func NewRouter(cfg RouterConfig) http.Handler {
 
 	// 1. Healthcheck — pings the DB so smoke tests catch a bad connection string,
 	// and reports the baked-in commit so a deploy can be verified against github.sha.
-	mux.HandleFunc("GET /api/health", func(w http.ResponseWriter, r *http.Request) {
+	// GET + HEAD: UptimeRobot free tier probes with HEAD (§TP9).
+	healthHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 		dbStatus := "skipped"
@@ -51,12 +53,24 @@ func NewRouter(cfg RouterConfig) http.Handler {
 		}
 
 		w.WriteHeader(statusCode)
+		if r.Method == http.MethodHead {
+			return
+		}
 		_ = json.NewEncoder(w).Encode(map[string]string{
 			"status":   map[bool]string{true: "healthy", false: "unhealthy"}[statusCode == http.StatusOK],
 			"database": dbStatus,
 			"commit":   version.Commit,
 		})
-	})
+	}
+	mux.HandleFunc("GET /api/health", healthHandler)
+	mux.HandleFunc("HEAD /api/health", healthHandler)
+
+	// TP9 demo fault — only when ENABLE_DEMO_FAULT=true. Remove/turn off after the exercise.
+	if cfg.EnableDemoFault {
+		mux.HandleFunc("GET /api/falla", func(w http.ResponseWriter, r *http.Request) {
+			panic("Falla de prueba del TP9")
+		})
+	}
 
 	// 2. Public Auth Routes
 	mux.HandleFunc("POST /api/auth/register", cfg.AuthHandler.Register)

@@ -6,6 +6,9 @@ import { formatSeconds } from './lib/format.js';
 import { validateAuthInput, validateActivityForm } from './lib/validate.js';
 import { createApiClient } from './lib/api.js';
 import { buildActivityQueryParams } from './lib/filters.js';
+import { initSentry } from './lib/sentry.js';
+
+initSentry();
 
 document.addEventListener('DOMContentLoaded', () => {
     const api = createApiClient();
@@ -15,6 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let activities = [];
     let activeTimer = null;
     let timerInterval = null;
+    // Ignore stale responses when login/load races with a later create/refresh.
+    let activitiesLoadSeq = 0;
+    let dashboardLoadSeq = 0;
 
     // --- DOM ELEMENTS ---
     // Screens
@@ -195,6 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderCategoryDropdowns() {
+        const preserve = {
+            timer: timerCategorySelect.value,
+            filter: filterCategory.value,
+            modal: modalCategory.value,
+        };
         const populate = (selectElement, includeAllOption = false) => {
             selectElement.innerHTML = '';
             if (includeAllOption) {
@@ -214,6 +225,9 @@ document.addEventListener('DOMContentLoaded', () => {
         populate(timerCategorySelect, false);
         populate(filterCategory, true);
         populate(modalCategory, false);
+        if (preserve.timer) timerCategorySelect.value = preserve.timer;
+        if (preserve.filter) filterCategory.value = preserve.filter;
+        if (preserve.modal) modalCategory.value = preserve.modal;
     }
 
     function renderCategoryManagementList() {
@@ -409,9 +423,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DASHBOARD & ANALYTICS ---
     async function loadDashboard() {
+        const seq = ++dashboardLoadSeq;
         try {
             const tzOffset = new Date().getTimezoneOffset();
             const data = await apiRequest(`/api/dashboard?tz_offset=${tzOffset}`);
+            if (seq !== dashboardLoadSeq) return;
 
             statToday.textContent = data.today_formatted || '0m';
             statWeek.textContent = data.week_formatted || '0m';
@@ -419,6 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderCategoryDistribution(data.category_distribution || []);
             renderWeeklyChart(data.daily_activity || []);
         } catch (err) {
+            if (seq !== dashboardLoadSeq) return;
             showToast('Failed to load dashboard metrics', 'error');
         }
     }
@@ -498,6 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- ACTIVITIES LIST & FILTERING ---
     async function loadActivities() {
+        const seq = ++activitiesLoadSeq;
         try {
             const params = buildActivityQueryParams({
                 search: filterSearch.value,
@@ -508,10 +526,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             const data = await apiRequest(`/api/activities?${params.toString()}`);
+            if (seq !== activitiesLoadSeq) return;
             activities = data.activities || [];
             historyCountBadge.textContent = `${activities.length} activities`;
             renderActivityTable();
         } catch (err) {
+            if (seq !== activitiesLoadSeq) return;
             showToast('Failed to load activity history', 'error');
         }
     }
@@ -655,7 +675,12 @@ document.addEventListener('DOMContentLoaded', () => {
         modalActivityId.value = '';
         activityModalTitle.textContent = 'Log Activity Manually';
         modalDescription.value = '';
-        modalDate.value = new Date().toISOString().split('T')[0];
+        // Local calendar date (toISOString is UTC and can shift the day).
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        modalDate.value = `${yyyy}-${mm}-${dd}`;
         modalHours.value = '1';
         modalMinutes.value = '0';
         modalNote.value = '';

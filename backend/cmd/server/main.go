@@ -11,6 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/getsentry/sentry-go"
+	sentryhttp "github.com/getsentry/sentry-go/http"
+
 	"flow/internal/activities"
 	"flow/internal/auth"
 	"flow/internal/categories"
@@ -90,7 +93,21 @@ func main() {
 	dashboardService := dashboard.NewService(dashboardRepo)
 	dashboardHandler := dashboard.NewHandler(dashboardService)
 
-	// 6. Setup HTTP Router & Middleware
+	// 6. Sentry (optional — empty SENTRY_DSN leaves the SDK idle)
+	if cfg.SentryDSN != "" {
+		if err := sentry.Init(sentry.ClientOptions{
+			Dsn:              cfg.SentryDSN,
+			Environment:      cfg.AppEnv,
+			TracesSampleRate: 1.0,
+		}); err != nil {
+			slog.Error("Sentry init failed", "error", err)
+			os.Exit(1)
+		}
+		defer sentry.Flush(2 * time.Second)
+		slog.Info("Sentry enabled", "environment", cfg.AppEnv)
+	}
+
+	// 7. Setup HTTP Router & Middleware
 	router := internalhttp.NewRouter(internalhttp.RouterConfig{
 		AuthHandler:      authHandler,
 		AuthService:      authService,
@@ -100,19 +117,25 @@ func main() {
 		DashboardHandler: dashboardHandler,
 		DB:               db,
 		WebFS:            web.FS,
+		EnableDemoFault:  cfg.EnableDemoFault,
 	})
 
-	// 7. Setup HTTP Server
+	var handler http.Handler = router
+	if cfg.SentryDSN != "" {
+		handler = sentryhttp.New(sentryhttp.Options{Repanic: true}).Handle(router)
+	}
+
+	// 8. Setup HTTP Server
 	serverAddr := fmt.Sprintf(":%d", cfg.AppPort)
 	server := &http.Server{
 		Addr:         serverAddr,
-		Handler:      router,
+		Handler:      handler,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
 
-	// 8. Start Server
+	// 9. Start Server
 	serverErrChan := make(chan error, 1)
 	go func() {
 		slog.Info("Flow server listening", "port", cfg.AppPort, "url", fmt.Sprintf("http://localhost:%d", cfg.AppPort))
@@ -121,7 +144,7 @@ func main() {
 		}
 	}()
 
-	// 9. Graceful Shutdown on SIGINT / SIGTERM
+	// 10. Graceful Shutdown on SIGINT / SIGTERM
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
