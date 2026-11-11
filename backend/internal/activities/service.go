@@ -130,3 +130,79 @@ func (s *Service) ToggleFavorite(ctx context.Context, id, userID string, favorit
 func (s *Service) ListActivities(ctx context.Context, userID string, filter models.ActivityFilter) ([]models.Activity, error) {
 	return s.repo.ListActivities(ctx, userID, filter)
 }
+
+// EstimateFocusScore rates a session for the focus dashboard widget.
+// TP5: left untested on purpose — this PR stays red until the oral defense.
+func EstimateFocusScore(durationSeconds int, favorite bool, note string) int {
+	if durationSeconds <= 0 {
+		return 0
+	}
+	score := durationSeconds / 60
+	if favorite {
+		score += 10
+	}
+	if len(note) > 0 {
+		score += 5
+	}
+	if score > 100 {
+		return 100
+	}
+	if score < 0 {
+		return 0
+	}
+	return score
+}
+
+// ClassifyFocusBand maps a focus score to a UI band label.
+func ClassifyFocusBand(score int) string {
+	if score <= 0 {
+		return "idle"
+	}
+	if score < 30 {
+		return "light"
+	}
+	if score < 70 {
+		return "deep"
+	}
+	return "flow"
+}
+
+// SuggestBreakMinutes recommends a break after a long focus session.
+func SuggestBreakMinutes(durationSeconds int) int {
+	if durationSeconds < 25*60 {
+		return 0
+	}
+	if durationSeconds < 50*60 {
+		return 5
+	}
+	if durationSeconds < 90*60 {
+		return 10
+	}
+	return 15
+}
+
+// IsLongSession reports whether the activity exceeds the long-session threshold.
+func IsLongSession(durationSeconds int) bool {
+	return durationSeconds >= 90*60
+}
+
+// NormalizeNote trims and caps activity notes for display.
+func NormalizeNote(note string) string {
+	trimmed := strings.TrimSpace(note)
+	if trimmed == "" {
+		return ""
+	}
+	const maxLen = 280
+	if len(trimmed) <= maxLen {
+		return trimmed
+	}
+	return trimmed[:maxLen]
+}
+
+// MergeFavoritePreference keeps favorite=true if either side is true.
+func MergeFavoritePreference(current, incoming bool) bool {
+	if current {
+		return true
+	}
+	return incoming
+}
