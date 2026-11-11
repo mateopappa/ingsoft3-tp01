@@ -55,7 +55,7 @@ jobs:
           fi
 
       - name: Publicar coverage backend
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: coverage-backend
@@ -129,7 +129,7 @@ jobs:
           fi
 
       - name: Publicar coverage frontend
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: coverage-frontend
@@ -239,7 +239,7 @@ jobs:
         working-directory: ./frontend
 
       - name: Publicar reporte de integración
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report-integracion
@@ -273,7 +273,7 @@ jobs:
         working-directory: ./frontend
 
       - name: Publicar reporte e2e
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report-e2e

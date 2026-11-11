@@ -42,7 +42,7 @@ jobs:
           fi
           terraform -chdir=infra init
           terraform -chdir=infra plan -no-color | tee plan.txt
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: tf-plan
